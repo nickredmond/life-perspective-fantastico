@@ -15,9 +15,9 @@ export class PressDirective implements OnInit, OnDestroy {
   ngOnInit() {
     this.pressGesture = new Gesture(this.el);
     this.pressGesture.listen();
-    this.pressGesture.on('press', e => {
-      console.log('pressed!!');
-    })
+    this.pressGesture.on('tap press pan', e => {
+      console.log('pressed: (' + e.center.x + ', ' + e.center.y + ')');
+    });
   }
 
   ngOnDestroy() {
