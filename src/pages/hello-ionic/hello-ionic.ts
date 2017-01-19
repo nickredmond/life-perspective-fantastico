@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 
-
 @Component({
   selector: 'page-hello-ionic',
   templateUrl: 'hello-ionic.html'
@@ -16,7 +15,7 @@ export class HelloIonicPage {
     let ctx: CanvasRenderingContext2D = canvas.getContext("2d");
 
     ctx.canvas.width = window.innerWidth;
-    ctx.canvas.height = window.innerHeight;
+    //ctx.canvas.height = window.innerHeight;
 
     ctx.beginPath();
     ctx.arc(position.x, position.y, 20, 0, 2 * Math.PI);
