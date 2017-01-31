@@ -5,6 +5,7 @@ import { BallVsWildPage } from '../pages/ball-vs-wild/ball-vs-wild';
 import { ItemDetailsPage } from '../pages/item-details/item-details';
 import { ListPage } from '../pages/list/list';
 import { PressDirective } from '../directives/press.gesture.directive.ts';
+import { Storage } from '@ionic/storage';
 
 @NgModule({
   declarations: [
@@ -24,6 +25,9 @@ import { PressDirective } from '../directives/press.gesture.directive.ts';
     ItemDetailsPage,
     ListPage
   ],
-  providers: [{provide: ErrorHandler, useClass: IonicErrorHandler}]
+  providers: [
+    {provide: ErrorHandler, useClass: IonicErrorHandler},
+    Storage
+  ]
 })
 export class AppModule {}
