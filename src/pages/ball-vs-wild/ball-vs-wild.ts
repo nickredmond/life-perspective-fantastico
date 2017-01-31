@@ -1,10 +1,11 @@
 import { Component } from "@angular/core";
 import { Storage } from "@ionic/storage";
-import { Unit } from "../../models/unit";
+import { Unit, Enemy } from "../../models/unit";
 import { Color } from "../../models/color";
 import { Circle } from "../../models/shapes";
 import { ExtendedMath } from "../../models/extendedmath";
-import { HealthBar } from "../../models/healthbar"
+import { HealthBar } from "../../models/healthbar";
+import { EnemyProducer } from "../../models/enemy.producer";
 
 @Component({
   selector: 'ball-vs-wild',
@@ -13,11 +14,6 @@ import { HealthBar } from "../../models/healthbar"
 export class BallVsWildPage {
   static readonly FPS: number = 60;
   static readonly MILLIS_PER_SECOND: number = 1000;
-  static readonly MAX_YELLOW_ENEMY_SPAWN_RATE = 3000;
-  static readonly YELLOW_ENEMY_COLOR: Color = Color.fromHexValue("#FFF000");
-  static readonly YELLOW_ENEMY_SIZE: number = 20;
-  static readonly YELLOW_ENEMY_VELOCITY: number = 100;
-  static readonly YELLOW_ENEMY_VALUE: number = 10;
 
   xVelocities: number[] = [];
   yVelocities: number[] = [];
@@ -29,8 +25,8 @@ export class BallVsWildPage {
   hero: Unit = null;
   healthBar: HealthBar = null;
   projectiles: Unit[] = [];
-  yellowEnemies: Unit[] = [];
-  nextYellowEnemyTimer: number = -1;
+  enemies: Enemy[] = [];
+  enemyGenerators: EnemyProducer[] = [];
 
   canvasContext: CanvasRenderingContext2D = null;
   storage: Storage;
@@ -47,7 +43,6 @@ export class BallVsWildPage {
     });
 
     this.healthBar = new HealthBar(15, 15);
-    this.resetYellowEnemyTimer();
     let dtMillis = BallVsWildPage.MILLIS_PER_SECOND / BallVsWildPage.FPS;
 
     setInterval((
@@ -78,41 +73,6 @@ export class BallVsWildPage {
       })(this, dtMillis), dtMillis);
   }
 
-  resetYellowEnemyTimer(){
-    this.nextYellowEnemyTimer = Math.random() * BallVsWildPage.MAX_YELLOW_ENEMY_SPAWN_RATE;
-  }
-  generateEnemy(ctx: CanvasRenderingContext2D): Unit {
-    let size = BallVsWildPage.YELLOW_ENEMY_SIZE;
-    let x, y = 0;
-    // TODO: refactor position generation
-    let direction = Math.random() * 4;
-    if (direction < 1) { // top
-      x = Math.random() * ctx.canvas.width
-      y = -size;
-    }
-    else if (direction < 2) { // right
-      x = ctx.canvas.width + size;
-      y = Math.random() * ctx.canvas.height;
-    }
-    else if (direction < 3) { // bottom
-      x = Math.random() * ctx.canvas.width;
-      y = ctx.canvas.height + size;
-    }
-    else { // left
-      x = -size;
-      y = Math.random() * ctx.canvas.height;
-    }
-
-    let enemy = new Unit(new Circle(ctx), x, y, size, BallVsWildPage.YELLOW_ENEMY_COLOR);
-    let deltaX = this.hero.positionX - x;
-    let deltaY = this.hero.positionY - y;
-    let deltaVel = Math.sqrt((deltaX * deltaX) + (deltaY * deltaY));
-    let scale = BallVsWildPage.YELLOW_ENEMY_VELOCITY / deltaVel;
-    enemy.velocityX = scale * deltaX;
-    enemy.velocityY = scale * deltaY;
-
-    return enemy;
-  }
   updateHighScore(){
     if (this.score > this.highScore){
       this.storage.set("highScore", this.score);
@@ -121,12 +81,11 @@ export class BallVsWildPage {
   }
 
   gameTick(dtMilliseconds: number){
-    if (this.nextYellowEnemyTimer < 0){
-      let enemy = this.generateEnemy(this.canvasContext);
-      this.yellowEnemies.push(enemy);
-      this.resetYellowEnemyTimer();
-    } else {
-      this.nextYellowEnemyTimer -= dtMilliseconds;
+    for (var i = 0; i < this.enemyGenerators.length; i++){
+      let enemy = this.enemyGenerators[i].tick(dtMilliseconds);
+      if (enemy != null){
+        this.enemies.push(enemy);
+      }
     }
 
     this.projectiles = this.projectiles.filter(function(proj){
@@ -144,11 +103,11 @@ export class BallVsWildPage {
       }
     }
 
-    this.yellowEnemies = this.yellowEnemies.filter(function(enemy){
+    this.enemies = this.enemies.filter(function(enemy){
       return enemy.isAlive;
     });
-    for (var i = 0; i < this.yellowEnemies.length; i++){
-      let enemy = this.yellowEnemies[i];
+    for (var i = 0; i < this.enemies.length; i++){
+      let enemy = this.enemies[i];
       if (this.hero.intersects(enemy)){
         if (this.healthBar.healthPoints === 1){
           this.updateHighScore();
@@ -162,11 +121,11 @@ export class BallVsWildPage {
       }
     }
 
-    for (var j = 0; j < this.yellowEnemies.length; j++){
+    for (var j = 0; j < this.enemies.length; j++){
       for (var k = 0; k < this.projectiles.length; k++){
-        if (this.yellowEnemies[j].intersects(this.projectiles[k])){
-          this.score += BallVsWildPage.YELLOW_ENEMY_VALUE;
-          this.yellowEnemies[j].isAlive = false;
+        if (this.enemies[j].intersects(this.projectiles[k])){
+          this.score += this.enemies[j].value;
+          this.enemies[j].isAlive = false;
           this.projectiles[k].isAlive = false;
         }
       }
@@ -198,7 +157,7 @@ export class BallVsWildPage {
     if (this.healthBar.healthPoints === 0){
       this.healthBar.healthPoints = HealthBar.DEFAULT_MAX_HP;
       this.projectiles = [];
-      this.yellowEnemies = [];
+      this.enemies = [];
       this.score = 0;
     }
     else if (this.xVelocities.length > 0 && this.yVelocities.length > 0) {
@@ -232,5 +191,8 @@ export class BallVsWildPage {
     let heroColor = Color.fromHexValue("#0200FF");
     let heroShape = new Circle(this.canvasContext);
     this.hero = new Unit(heroShape, this.heroTopLeftX, this.heroTopLeftY, size, heroColor);
+
+    this.enemyGenerators.push(new EnemyProducer(10, 20, 100, 4000, this.hero, Color.fromHexValue("#FFF000"), this.canvasContext));
+    this.enemyGenerators.push(new EnemyProducer(25, 10, 200, 6000, this.hero, Color.fromHexValue("#00FF00"), this.canvasContext));
   }
 }
