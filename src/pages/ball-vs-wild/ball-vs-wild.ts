@@ -4,11 +4,18 @@ import { Color } from "../../models/color";
 import { Circle } from "../../models/shapes";
 
 @Component({
-  selector: 'page-hello-ionic',
-  templateUrl: 'hello-ionic.html'
+  selector: 'ball-vs-wild',
+  templateUrl: 'ball-vs-wild.html'
 })
-export class HelloIonicPage {
+export class BallVsWildPage {
   constructor() {}
+
+  onTouchStart(event) {
+  	console.log('starting: ' + JSON.stringify(Object.keys(event)));
+  }
+  onTouchEnd(event) {
+
+  }
 
   ionViewDidEnter() {
   	let canvas = <HTMLCanvasElement>document.getElementById("mainCanvas");

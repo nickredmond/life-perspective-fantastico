@@ -9,6 +9,6 @@
 
 
 <ion-content longPress>
-  <canvas id="mainCanvas">
+  <canvas id="mainCanvas" (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
   </canvas>
 </ion-content>

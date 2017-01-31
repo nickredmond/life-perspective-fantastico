@@ -4,7 +4,7 @@ import { Platform, MenuController, Nav } from 'ionic-angular';
 
 import { StatusBar, Splashscreen } from 'ionic-native';
 
-import { HelloIonicPage } from '../pages/hello-ionic/hello-ionic';
+import { BallVsWildPage } from '../pages/ball-vs-wild/ball-vs-wild';
 import { ListPage } from '../pages/list/list';
 
 
@@ -14,8 +14,8 @@ import { ListPage } from '../pages/list/list';
 export class MyApp {
   @ViewChild(Nav) nav: Nav;
 
-  // make HelloIonicPage the root (or first) page
-  rootPage: any = HelloIonicPage;
+  // make BallVsWildPage the root (or first) page
+  rootPage: any = BallVsWildPage;
   pages: Array<{title: string, component: any}>;
 
   constructor(
@@ -26,7 +26,7 @@ export class MyApp {
 
     // set our app's pages
     this.pages = [
-      { title: 'Hello Ionic', component: HelloIonicPage },
+      { title: 'Ball vs Wild', component: BallVsWildPage },
       { title: 'Reasons I Love Jordan', component: ListPage }
     ];
   }

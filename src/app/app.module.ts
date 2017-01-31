@@ -1,7 +1,7 @@
 import { NgModule, ErrorHandler } from '@angular/core';
 import { IonicApp, IonicModule, IonicErrorHandler } from 'ionic-angular';
 import { MyApp } from './app.component';
-import { HelloIonicPage } from '../pages/hello-ionic/hello-ionic';
+import { BallVsWildPage } from '../pages/ball-vs-wild/ball-vs-wild';
 import { ItemDetailsPage } from '../pages/item-details/item-details';
 import { ListPage } from '../pages/list/list';
 import { PressDirective } from '../directives/press.gesture.directive.ts';
@@ -9,7 +9,7 @@ import { PressDirective } from '../directives/press.gesture.directive.ts';
 @NgModule({
   declarations: [
     MyApp,
-    HelloIonicPage,
+    BallVsWildPage,
     ItemDetailsPage,
     ListPage,
     PressDirective
@@ -20,7 +20,7 @@ import { PressDirective } from '../directives/press.gesture.directive.ts';
   bootstrap: [IonicApp],
   entryComponents: [
     MyApp,
-    HelloIonicPage,
+    BallVsWildPage,
     ItemDetailsPage,
     ListPage
   ],
