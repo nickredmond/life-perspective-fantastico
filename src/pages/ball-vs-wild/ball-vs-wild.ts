@@ -171,7 +171,8 @@ export class BallVsWildPage {
       this.projectiles = [];
       this.yellowEnemies = [];
       this.score = 0;
-    } else {
+    }
+    else if (this.xVelocities.length > 0 && this.yVelocities.length > 0) {
       let averageVelocityX = ExtendedMath.average(this.xVelocities);
       let averageVelocityY = ExtendedMath.average(this.yVelocities);
 
