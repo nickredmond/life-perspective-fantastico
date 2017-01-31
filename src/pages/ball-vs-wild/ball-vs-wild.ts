@@ -1,4 +1,5 @@
 import { Component } from "@angular/core";
+import { Storage } from "@ionic/storage";
 import { Unit } from "../../models/unit";
 import { Color } from "../../models/color";
 import { Circle } from "../../models/shapes";
@@ -24,14 +25,27 @@ export class BallVsWildPage {
   heroTopLeftX: number;
   heroTopLeftY: number;
   score: number = 0;
+  highScore: number = 0;
   hero: Unit = null;
   healthBar: HealthBar = null;
   projectiles: Unit[] = [];
   yellowEnemies: Unit[] = [];
-  canvasContext: CanvasRenderingContext2D = null;
   nextYellowEnemyTimer: number = -1;
 
-  constructor() {
+  canvasContext: CanvasRenderingContext2D = null;
+  storage: Storage;
+
+  constructor(storage: Storage) {
+    this.storage = storage;
+    this.storage.get("highScore").then((val) => {
+      if (val === null){
+        this.storage.set("highScore", 0);
+      }
+      else {
+        this.highScore = val;
+      }
+    });
+
     this.healthBar = new HealthBar(15, 15);
     this.resetYellowEnemyTimer();
     let dtMillis = BallVsWildPage.MILLIS_PER_SECOND / BallVsWildPage.FPS;
@@ -99,6 +113,12 @@ export class BallVsWildPage {
 
     return enemy;
   }
+  updateHighScore(){
+    if (this.score > this.highScore){
+      this.storage.set("highScore", this.score);
+      this.highScore = this.score;
+    }
+  }
 
   gameTick(dtMilliseconds: number){
     if (this.nextYellowEnemyTimer < 0){
@@ -130,6 +150,9 @@ export class BallVsWildPage {
     for (var i = 0; i < this.yellowEnemies.length; i++){
       let enemy = this.yellowEnemies[i];
       if (this.hero.intersects(enemy)){
+        if (this.healthBar.healthPoints === 1){
+          this.updateHighScore();
+        }
         this.healthBar.takeHealth();
         enemy.isAlive = false;
       }
@@ -155,10 +178,16 @@ export class BallVsWildPage {
     this.healthBar.draw(this.canvasContext);
 
     let ctx = this.canvasContext;
+    let scoreX = ctx.canvas.width - 15;
+
+    ctx.font = "18px Courier";
+    ctx.fillStyle = "#AAA";
+    ctx.textAlign = "right";
+    ctx.fillText("HI SCORE: " + this.highScore, scoreX, 30);
+
     ctx.font = "30px Courier";
     ctx.fillStyle = "white";
-    ctx.textAlign = "right";
-    ctx.fillText(this.score.toString(), ctx.canvas.width - 15, 35);
+    ctx.fillText(this.score.toString(), scoreX, 60);
   }
 
   onDragGesture(event){
