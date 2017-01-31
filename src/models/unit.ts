@@ -2,8 +2,11 @@ import { Color } from "./color";
 import { Shape, Circle } from "./shapes"
 
 export class Unit {
+	isAlive: boolean = true;
 	positionX: number;
 	positionY: number;
+	velocityX: number = 0;
+	velocityY: number = 0;
 	size: number;
 	color: Color;
 	shape: Shape;
@@ -14,6 +17,11 @@ export class Unit {
 		this.size = size;
 		this.color = color;
 		this.shape = shape;
+	}
+
+	public update(dt){
+		this.positionX += (this.velocityX * dt);
+		this.positionY += (this.velocityY * dt);
 	}
 
 	public draw(ctx: CanvasRenderingContext2D){

@@ -1,35 +1,38 @@
-import {Directive, ElementRef, Input, OnInit, OnDestroy} from '@angular/core';
+import {Directive, ElementRef, Output, OnInit, OnDestroy, EventEmitter} from '@angular/core';
 import {Gesture} from 'ionic-angular/gestures/gesture';
 
 @Directive({
-  selector: null // '[longPress]'
+  selector: '[anyPress]'
 })
 export abstract class PressDirective implements OnInit, OnDestroy {
   el: HTMLElement;
-  pressGesture: Gesture;
+  directiveGesture: Gesture;
   static eventName: string = null;
 
   @Output()
-  gestureEmitter: EventEmitter = new EventEmitter();
+  longPressGesture: EventEmitter<any> = new EventEmitter();
+  @Output()
+  panGesture: EventEmitter<any> = new EventEmitter();
 
   constructor(el: ElementRef) {
     this.el = el.nativeElement;
   }
 
   static getEventName(): string { return PressDirective.eventName; }
-  static setEventName(name: string): { PressDirective.eventName = name; }
+  static setEventName(name: string) { PressDirective.eventName = name; }
 
   ngOnInit() {
-    this.pressGesture = new Gesture(this.el);
-    this.pressGesture.listen();
-    this.pressGesture.on('pan', e => {
-      this.gestureEmitter.emit(e);
-      //console.log('more bridging: ' + JSON.stringify(Object.keys(e)));
-      //console.log('pressed: (' + e.center.x + ', ' + e.center.y + ') at vel. (' + e.velocityX + ', ' + e.velocityY + ')');
+    this.directiveGesture = new Gesture(this.el);
+    this.directiveGesture.listen();
+    this.directiveGesture.on('pan', e => {
+      this.panGesture.emit(e);
+    });
+    this.directiveGesture.on('press', e => {
+      this.longPressGesture.emit(e);
     });
   }
 
   ngOnDestroy() {
-    this.pressGesture.destroy();
+    this.directiveGesture.destroy();
   }
 }
