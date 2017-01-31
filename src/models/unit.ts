@@ -1,5 +1,5 @@
 import { Color } from "./color";
-import { Shape, Circle } from "./shapes"
+import { Shape } from "./shapes"
 
 export class Unit {
 	isAlive: boolean = true;
@@ -19,12 +19,19 @@ export class Unit {
 		this.shape = shape;
 	}
 
-	public update(dt){
+	public intersects(otherUnit: Unit) {
+		return !(otherUnit.positionX > (this.positionX + this.size) ||
+			(otherUnit.positionX + otherUnit.size) < this.positionX ||
+			otherUnit.positionY > (this.positionY + this.size) ||
+			(otherUnit.positionY + otherUnit.size) < this.positionY)
+	}
+
+	public update(dt) {
 		this.positionX += (this.velocityX * dt);
 		this.positionY += (this.velocityY * dt);
 	}
 
-	public draw(ctx: CanvasRenderingContext2D){
+	public draw(ctx: CanvasRenderingContext2D) {
     	this.shape.draw(this.color, this.positionX, this.positionY, this.size);
 	}
 }
