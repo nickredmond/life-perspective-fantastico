@@ -1,8 +1,8 @@
 export class PositionTuple {
-	x: Number;
-	y: Number;
+	x: number;
+	y: number;
 
-	constructor(x: Number = 0, y: Number = 0){
+	constructor(x: number = 0, y: number = 0){
 		this.x = x;
 		this.y = y;
 	}

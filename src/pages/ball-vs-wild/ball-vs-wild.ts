@@ -10,25 +10,52 @@ import { ExtendedMath } from "../../models/extendedmath.ts";
   templateUrl: 'ball-vs-wild.html'
 })
 export class BallVsWildPage {
+  static readonly FPS = 60;
+  static readonly MILLIS_PER_SECOND = 1000;
+
   xVelocities: number[] = [];
   yVelocities: number[] = [];
-  startPosition: PositionTuple = null;
-  endPosition: PositionTuple = null;
-  isTouching: Boolean = false;
-  constructor() {}
 
-  onTouchStart(event) {
-  	//console.log('starting: ' + JSON.stringify(Object.keys(event)));
-    this.isTouching = true;
+  heroTopLeftX: number;
+  heroTopLeftY: number;
+  hero: Unit = null;
+  projectiles: Unit[] = [];
+  canvasContext: CanvasRenderingContext2D = null;
+
+  constructor() {
+    let dtMillis = BallVsWildPage.MILLIS_PER_SECOND / BallVsWildPage.FPS;
+
+    setInterval((
+      function(self){
+        return function() {
+          if (self.canvasContext){
+            let ctx = self.canvasContext;
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+            self.projectiles = self.projectiles.filter(function(proj){
+              return proj.isAlive;
+            });
+            for (var i = 0; i < self.projectiles.length; i++){
+              let projectile = self.projectiles[i];
+              if (projectile.positionX < -projectile.size || projectile.positionX > (ctx.canvas.width + projectile.size) ||
+                    projectile.positionY < -projectile.size || projectile.positionY > (ctx.canvas.height + projectile.size)){
+                projectile.isAlive = false;
+              }
+              else {
+                projectile.update(dtMillis / BallVsWildPage.MILLIS_PER_SECOND);
+                projectile.draw(ctx);
+              }
+            }
+
+            if (self.hero){
+              self.hero.draw(this.canvasContext);
+            }
+          }
+        };
+      })(this), dtMillis);
   }
-  onDragGesture(event){
-    let centerX = event.center.x;
-    let centerY = event.center.y;
-    if (this.startPosition === null){
-      this.startPosition = new PositionTuple(centerX, centerY);
-    }
-    this.endPosition = new PositionTuple(centerX, centerY);
 
+  onDragGesture(event){
     this.xVelocities.push(event.velocityX);
     this.yVelocities.push(event.velocityY);
   }
@@ -36,37 +63,31 @@ export class BallVsWildPage {
     let averageVelocityX = ExtendedMath.average(this.xVelocities);
     let averageVelocityY = ExtendedMath.average(this.yVelocities);
 
-    console.log("swing it: (" + averageVelocityX + ", " + averageVelocityY +
-      "), (" + this.startPosition.x + ", " + this.startPosition.y + ") -> (" +
-      this.endPosition.x + ", " + this.endPosition.y + ")");
+    let projShape = new Circle(this.canvasContext);
+    let nextProjectile = new Unit(projShape, this.heroTopLeftX, this.heroTopLeftY,
+      5, Color.fromHexValue("#FF0000"));
+    nextProjectile.velocityX = averageVelocityX * 100;
+    nextProjectile.velocityY = averageVelocityY * 100;
+    this.projectiles.push(nextProjectile);
 
-    //console.log('ending: ' + JSON.stringify(Object.keys(event)));
     this.xVelocities = [];
     this.yVelocities = [];
-    this.startPosition = null;
-    this.endPosition = null;
-    this.isTouching = false;
   }
 
   ionViewDidEnter() {
   	let canvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
-  	var position = { x: 20, y: 20 }; //event.center;
-    let ctx: CanvasRenderingContext2D = canvas.getContext("2d");
+    this.canvasContext = canvas.getContext("2d");
 
-    ctx.canvas.width = window.screen.width;
-    ctx.canvas.height = window.screen.height - document.getElementById("viewHeader").offsetHeight - 8;
-    ctx.canvas.style.backgroundColor = "#000";
+    this.canvasContext.canvas.width = window.screen.width;
+    this.canvasContext.canvas.height = window.screen.height - document.getElementById("viewHeader").offsetHeight - 8;
+    this.canvasContext.canvas.style.backgroundColor = "#000";
 
-    console.log("bridges: " + ctx.canvas.offsetTop + ", " + ctx.canvas.height);
+    console.log("bridges: " + this.canvasContext.canvas.offsetTop + ", " + this.canvasContext.canvas.height);
     let size = 20;
-    let topLeftX = (ctx.canvas.width / 2) - (size / 2); //(window.innerWidth / 2) - (size / 2);
-    let topLeftY = (ctx.canvas.height / 2) - (size / 2);
+    this.heroTopLeftX = (this.canvasContext.canvas.width / 2) - (size / 2); //(window.innerWidth / 2) - (size / 2);
+    this.heroTopLeftY = (this.canvasContext.canvas.height / 2) - (size / 2);
     let heroColor = Color.fromHexValue("#0200FF");
-    let heroShape = new Circle(ctx);
-    let hero = new Unit(heroShape, topLeftX, topLeftY, size, heroColor);
-
-    setInterval(function(){
-    	hero.draw(ctx);
-    }, (1000 / 60));
+    let heroShape = new Circle(this.canvasContext);
+    this.hero = new Unit(heroShape, this.heroTopLeftX, this.heroTopLeftY, size, heroColor);
   }
 }
