@@ -41,6 +41,7 @@ export class BallVsWildPage {
         return function() {
           if (self.canvasContext){
             let ctx = self.canvasContext;
+            ctx.fillStyle = "white";
             ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
             if (self.healthBar.healthPoints > 0){
@@ -51,7 +52,6 @@ export class BallVsWildPage {
               let centerY = ctx.canvas.height / 2;
 
               ctx.font = "30px Courier";
-              ctx.fillStyle = "white";
               ctx.textAlign = "center";
               ctx.fillText("You have died.", centerX, centerY - 20);
               ctx.fillText("SCORE: " + self.score, centerX, centerY + 15);

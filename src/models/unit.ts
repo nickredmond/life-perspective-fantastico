@@ -1,5 +1,5 @@
 import { Color } from "./color";
-import { Shape } from "./shapes"
+import { Shape } from "./shapes";
 
 export class Unit {
 	isAlive: boolean = true;
