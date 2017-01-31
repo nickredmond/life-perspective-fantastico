@@ -35,3 +35,12 @@ export class Unit {
     	this.shape.draw(this.color, this.positionX, this.positionY, this.size);
 	}
 }
+
+export class Enemy extends Unit {
+	value: number;
+
+	constructor(value: number, shape: Shape, x: number = 0, y: number = 0, size: number = 0, color: Color = new Color()){
+		super(shape, x, y, size, color);
+		this.value = value;
+	}
+}
