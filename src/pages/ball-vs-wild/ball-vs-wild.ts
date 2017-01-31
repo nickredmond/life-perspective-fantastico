@@ -16,12 +16,14 @@ export class BallVsWildPage {
   static readonly YELLOW_ENEMY_COLOR: Color = Color.fromHexValue("#FFF000");
   static readonly YELLOW_ENEMY_SIZE: number = 20;
   static readonly YELLOW_ENEMY_VELOCITY: number = 100;
+  static readonly YELLOW_ENEMY_VALUE: number = 10;
 
   xVelocities: number[] = [];
   yVelocities: number[] = [];
 
   heroTopLeftX: number;
   heroTopLeftY: number;
+  score: number = 0;
   hero: Unit = null;
   healthBar: HealthBar = null;
   projectiles: Unit[] = [];
@@ -31,7 +33,7 @@ export class BallVsWildPage {
 
   constructor() {
     this.healthBar = new HealthBar(15, 15);
-    this.nextYellowEnemyTimer = Math.random() * BallVsWildPage.MAX_YELLOW_ENEMY_SPAWN_RATE;
+    this.resetYellowEnemyTimer();
     let dtMillis = BallVsWildPage.MILLIS_PER_SECOND / BallVsWildPage.FPS;
 
     setInterval((
@@ -45,16 +47,26 @@ export class BallVsWildPage {
               self.gameTick(dtMilliseconds);
             }
             else {
+              let centerX = ctx.canvas.width / 2;
+              let centerY = ctx.canvas.height / 2;
+
               ctx.font = "30px Courier";
               ctx.fillStyle = "white";
               ctx.textAlign = "center";
-              ctx.fillText("You have died.", (ctx.canvas.width / 2), (ctx.canvas.height / 2));
+              ctx.fillText("You have died.", centerX, centerY - 20);
+              ctx.fillText("SCORE: " + self.score, centerX, centerY + 15);
+
+              ctx.font = "18px Courier";
+              ctx.fillText("(Tap to retry)", centerX, centerY + 50);
             }
           }
         };
       })(this, dtMillis), dtMillis);
   }
 
+  resetYellowEnemyTimer(){
+    this.nextYellowEnemyTimer = Math.random() * BallVsWildPage.MAX_YELLOW_ENEMY_SPAWN_RATE;
+  }
   generateEnemy(ctx: CanvasRenderingContext2D): Unit {
     let size = BallVsWildPage.YELLOW_ENEMY_SIZE;
     let x, y = 0;
@@ -87,11 +99,12 @@ export class BallVsWildPage {
 
     return enemy;
   }
+
   gameTick(dtMilliseconds: number){
     if (this.nextYellowEnemyTimer < 0){
       let enemy = this.generateEnemy(this.canvasContext);
       this.yellowEnemies.push(enemy);
-      this.nextYellowEnemyTimer = Math.random() * BallVsWildPage.MAX_YELLOW_ENEMY_SPAWN_RATE;
+      this.resetYellowEnemyTimer();
     } else {
       this.nextYellowEnemyTimer -= dtMilliseconds;
     }
@@ -126,10 +139,26 @@ export class BallVsWildPage {
       }
     }
 
+    for (var j = 0; j < this.yellowEnemies.length; j++){
+      for (var k = 0; k < this.projectiles.length; k++){
+        if (this.yellowEnemies[j].intersects(this.projectiles[k])){
+          this.score += BallVsWildPage.YELLOW_ENEMY_VALUE;
+          this.yellowEnemies[j].isAlive = false;
+          this.projectiles[k].isAlive = false;
+        }
+      }
+    }
+
     if (this.hero){
       this.hero.draw(this.canvasContext);
     }
     this.healthBar.draw(this.canvasContext);
+
+    let ctx = this.canvasContext;
+    ctx.font = "30px Courier";
+    ctx.fillStyle = "white";
+    ctx.textAlign = "right";
+    ctx.fillText(this.score.toString(), ctx.canvas.width - 15, 35);
   }
 
   onDragGesture(event){
@@ -137,18 +166,25 @@ export class BallVsWildPage {
     this.yVelocities.push(event.velocityY);
   }
   onTouchEnd(event) {
-    let averageVelocityX = ExtendedMath.average(this.xVelocities);
-    let averageVelocityY = ExtendedMath.average(this.yVelocities);
+    if (this.healthBar.healthPoints === 0){
+      this.healthBar.healthPoints = HealthBar.DEFAULT_MAX_HP;
+      this.projectiles = [];
+      this.yellowEnemies = [];
+      this.score = 0;
+    } else {
+      let averageVelocityX = ExtendedMath.average(this.xVelocities);
+      let averageVelocityY = ExtendedMath.average(this.yVelocities);
 
-    let projShape = new Circle(this.canvasContext);
-    let nextProjectile = new Unit(projShape, this.heroTopLeftX, this.heroTopLeftY,
-      5, Color.fromHexValue("#FF0000"));
-    nextProjectile.velocityX = averageVelocityX * 100;
-    nextProjectile.velocityY = averageVelocityY * 100;
-    this.projectiles.push(nextProjectile);
+      let projShape = new Circle(this.canvasContext);
+      let nextProjectile = new Unit(projShape, this.heroTopLeftX, this.heroTopLeftY,
+        5, Color.fromHexValue("#FF0000"));
+      nextProjectile.velocityX = averageVelocityX * 100;
+      nextProjectile.velocityY = averageVelocityY * 100;
+      this.projectiles.push(nextProjectile);
 
-    this.xVelocities = [];
-    this.yVelocities = [];
+      this.xVelocities = [];
+      this.yVelocities = [];
+    }
   }
 
   ionViewDidEnter() {
