@@ -3,15 +3,16 @@ import { Unit } from "../../models/unit";
 import { Color } from "../../models/color";
 import { Circle } from "../../models/shapes";
 import { PositionTuple } from "../../models/position.tuple";
-import { ExtendedMath } from "../../models/extendedmath.ts";
+import { ExtendedMath } from "../../models/extendedmath";
+import { HealthBar } from "../../models/healthbar"
 
 @Component({
   selector: 'ball-vs-wild',
   templateUrl: 'ball-vs-wild.html'
 })
 export class BallVsWildPage {
-  static readonly FPS = 60;
-  static readonly MILLIS_PER_SECOND = 1000;
+  static readonly FPS: number = 60;
+  static readonly MILLIS_PER_SECOND: number = 1000;
 
   xVelocities: number[] = [];
   yVelocities: number[] = [];
@@ -19,10 +20,12 @@ export class BallVsWildPage {
   heroTopLeftX: number;
   heroTopLeftY: number;
   hero: Unit = null;
+  healthBar: HealthBar = null;
   projectiles: Unit[] = [];
   canvasContext: CanvasRenderingContext2D = null;
 
   constructor() {
+    this.healthBar = new HealthBar(15, 15);
     let dtMillis = BallVsWildPage.MILLIS_PER_SECOND / BallVsWildPage.FPS;
 
     setInterval((
@@ -48,8 +51,9 @@ export class BallVsWildPage {
             }
 
             if (self.hero){
-              self.hero.draw(this.canvasContext);
+              self.hero.draw(self.canvasContext);
             }
+            self.healthBar.draw(self.canvasContext);
           }
         };
       })(this), dtMillis);
