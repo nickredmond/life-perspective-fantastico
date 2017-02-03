@@ -3,7 +3,6 @@ import { Storage } from "@ionic/storage";
 import { Unit, Enemy } from "../../models/unit";
 import { Color } from "../../models/color";
 import { Circle } from "../../models/shapes";
-import { ExtendedMath } from "../../models/extendedmath";
 import { HealthBar } from "../../models/healthbar";
 import { EnemyProducer } from "../../models/enemy.producer";
 
@@ -14,9 +13,11 @@ import { EnemyProducer } from "../../models/enemy.producer";
 export class BallVsWildPage {
   static readonly FPS: number = 60;
   static readonly MILLIS_PER_SECOND: number = 1000;
+  static readonly MIN_SHOT_VELOCITY: number = 400;
 
-  xVelocities: number[] = [];
-  yVelocities: number[] = [];
+  maxVelocityX: number = 0;
+  maxVelocityY: number = 0;
+  maxVelocity: number = 0;
 
   heroTopLeftX: number;
   heroTopLeftY: number;
@@ -150,8 +151,15 @@ export class BallVsWildPage {
   }
 
   onDragGesture(event){
-    this.xVelocities.push(event.velocityX);
-    this.yVelocities.push(event.velocityY);
+    let xVelSquared = event.velocityX * event.velocityX;
+    let yVelSquared = event.velocityY * event.velocityY;
+    let currentVelocity = Math.sqrt(xVelSquared + yVelSquared);
+
+    if (currentVelocity > this.maxVelocity){
+      this.maxVelocity = currentVelocity;
+      this.maxVelocityX = event.velocityX;
+      this.maxVelocityY = event.velocityY;
+    }
   }
   onTouchEnd(event) {
     if (this.healthBar.healthPoints === 0){
@@ -160,19 +168,17 @@ export class BallVsWildPage {
       this.enemies = [];
       this.score = 0;
     }
-    else if (this.xVelocities.length > 0 && this.yVelocities.length > 0) {
-      let averageVelocityX = ExtendedMath.average(this.xVelocities);
-      let averageVelocityY = ExtendedMath.average(this.yVelocities);
+    else if (this.maxVelocity > 0) {
+      let velocityScale = BallVsWildPage.MIN_SHOT_VELOCITY / Math.abs(this.maxVelocity);
 
       let projShape = new Circle(this.canvasContext);
       let nextProjectile = new Unit(projShape, this.heroTopLeftX, this.heroTopLeftY,
         5, Color.fromHexValue("#FF0000"));
-      nextProjectile.velocityX = averageVelocityX * 100;
-      nextProjectile.velocityY = averageVelocityY * 100;
+      nextProjectile.velocityX = (velocityScale > 1) ? (this.maxVelocityX * velocityScale) : this.maxVelocityX;
+      nextProjectile.velocityY = (velocityScale > 1) ? (this.maxVelocityY * velocityScale) : this.maxVelocityY;
       this.projectiles.push(nextProjectile);
 
-      this.xVelocities = [];
-      this.yVelocities = [];
+      this.maxVelocity = 0;
     }
   }
 
@@ -180,11 +186,10 @@ export class BallVsWildPage {
   	let canvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
     this.canvasContext = canvas.getContext("2d");
 
-    this.canvasContext.canvas.width = window.screen.width;
-    this.canvasContext.canvas.height = window.screen.height - document.getElementById("viewHeader").offsetHeight - 8;
+    this.canvasContext.canvas.width = window.innerWidth;
+    this.canvasContext.canvas.height = window.innerHeight;
     this.canvasContext.canvas.style.backgroundColor = "#000";
 
-    console.log("bridges: " + this.canvasContext.canvas.offsetTop + ", " + this.canvasContext.canvas.height);
     let size = 25;
     this.heroTopLeftX = (this.canvasContext.canvas.width / 2) - (size / 2); //(window.innerWidth / 2) - (size / 2);
     this.heroTopLeftY = (this.canvasContext.canvas.height / 2) - (size / 2);
@@ -193,6 +198,6 @@ export class BallVsWildPage {
     this.hero = new Unit(heroShape, this.heroTopLeftX, this.heroTopLeftY, size, heroColor);
 
     this.enemyGenerators.push(new EnemyProducer(10, 20, 100, 4000, this.hero, Color.fromHexValue("#FFF000"), this.canvasContext));
-    this.enemyGenerators.push(new EnemyProducer(25, 10, 200, 6000, this.hero, Color.fromHexValue("#00FF00"), this.canvasContext));
+    this.enemyGenerators.push(new EnemyProducer(25, 10, 175, 7000, this.hero, Color.fromHexValue("#00FF00"), this.canvasContext));
   }
 }
