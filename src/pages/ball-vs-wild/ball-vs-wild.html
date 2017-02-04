@@ -9,6 +9,9 @@
 
 
 <ion-content>
-  <canvas anyPress id="mainCanvas" (touchend)="onTouchEnd($event)" (panGesture)="onDragGesture($event)">
+  <canvas anyPress id="mainCanvas"
+  	(touchend)="onTouchEnd($event)"
+  	(panEvent)="onDragGesture($event)"
+  	(doubleTapEvent)="onDoubleTap($event)">
   </canvas>
 </ion-content>

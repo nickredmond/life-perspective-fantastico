@@ -1,5 +1,7 @@
 import {Directive, ElementRef, Output, OnInit, OnDestroy, EventEmitter} from '@angular/core';
 import {Gesture} from 'ionic-angular/gestures/gesture';
+//import { Hammer } from 'hammerjs';
+declare var Hammer: any;
 
 @Directive({
   selector: '[anyPress]'
@@ -7,12 +9,15 @@ import {Gesture} from 'ionic-angular/gestures/gesture';
 export abstract class PressDirective implements OnInit, OnDestroy {
   el: HTMLElement;
   directiveGesture: Gesture;
+  doubleTapGesture: Gesture;
   static eventName: string = null;
 
   @Output()
-  longPressGesture: EventEmitter<any> = new EventEmitter();
+  longPressEvent: EventEmitter<any> = new EventEmitter();
   @Output()
-  panGesture: EventEmitter<any> = new EventEmitter();
+  panEvent: EventEmitter<any> = new EventEmitter();
+  @Output()
+  doubleTapEvent: EventEmitter<any> = new EventEmitter();
 
   constructor(el: ElementRef) {
     this.el = el.nativeElement;
@@ -25,10 +30,20 @@ export abstract class PressDirective implements OnInit, OnDestroy {
     this.directiveGesture = new Gesture(this.el);
     this.directiveGesture.listen();
     this.directiveGesture.on('pan', e => {
-      this.panGesture.emit(e);
+      this.panEvent.emit(e);
     });
     this.directiveGesture.on('press', e => {
-      this.longPressGesture.emit(e);
+      this.longPressEvent.emit(e);
+    });
+
+    this.doubleTapGesture = new Gesture(this.el, {
+      recognizers: [
+        [Hammer.Tap, {taps: 2}]
+      ]
+    });
+    this.doubleTapGesture.listen();
+    this.doubleTapGesture.on('tap', e => {
+      this.doubleTapEvent.emit(e);
     });
   }
 
