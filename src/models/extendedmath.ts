@@ -6,4 +6,8 @@ export class ExtendedMath {
 		}
 		return sum / values.length;
 	}
+
+	static toRadians(degrees: number) {
+		return degrees * (Math.PI / 180);
+	}
 }

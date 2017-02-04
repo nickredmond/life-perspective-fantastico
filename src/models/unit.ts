@@ -30,6 +30,10 @@ export class Unit {
 		this.positionX += (this.velocityX * dt);
 		this.positionY += (this.velocityY * dt);
 	}
+	public reverseFrame(dt) {
+		this.positionX -= (this.velocityX * dt);
+		this.positionY -= (this.velocityY * dt);
+	}
 
 	public draw(ctx: CanvasRenderingContext2D) {
     	this.shape.draw(this.color, this.positionX, this.positionY, this.size);
