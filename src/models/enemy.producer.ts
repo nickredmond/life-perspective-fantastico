@@ -39,15 +39,15 @@ export class UnitProducer {
 
 export class EnemyProducer extends UnitProducer {
   value: number;
-  color: Color;
+  imgSrc: string;
   hero: Unit;
 
   constructor(value: number, size: number, velocity: number, spawnRateMillis: number,
-      hero: Unit, color: Color, ctx: CanvasRenderingContext2D){
+      hero: Unit, imgSrc: string, ctx: CanvasRenderingContext2D){
     super(size, velocity, spawnRateMillis, ctx);
     this.hero = hero;
     this.value = value;
-    this.color = color;
+    this.imgSrc = imgSrc;
   }
 
   public tick(dtMilliseconds, generateFunction = null): Unit {
@@ -76,7 +76,7 @@ export class EnemyProducer extends UnitProducer {
       y = Math.random() * ctx.canvas.height;
     }
 
-    let enemy = new Enemy((<EnemyProducer>producer).value, new Circle(ctx), x, y, size, (<EnemyProducer>producer).color);
+    let enemy = new Enemy((<EnemyProducer>producer).value, (<EnemyProducer>producer).imgSrc, x, y, size);
     let deltaX = (<EnemyProducer>producer).hero.positionX - x;
     let deltaY = (<EnemyProducer>producer).hero.positionY - y;
     let deltaVel = Math.sqrt((deltaX * deltaX) + (deltaY * deltaY));

@@ -1,3 +1,7 @@
+import { ExtendedMath } from "./extendedmath";
+import { ShapeUnit } from "./unit";
+import { BallVsWildPage } from "../pages/ball-vs-wild/ball-vs-wild";
+
 export class HealthBar {
 	static readonly DEFAULT_HP_SIZE: number = 25;
 	static readonly DEFAULT_MAX_HP: number = 3;
@@ -58,7 +62,7 @@ export class PowerupBar {
 	isTextShowing: boolean = false;
 	millisSinceBlink: number = 0;
 
-	constructor(width: number, height: number, maxPoints: number, 
+	constructor(width: number, height: number, maxPoints: number,
 			x: number = 0, y: number = 0, barFilledPhrase: string = "READY",
 			blinkRateMillis = PowerupBar.DEFAULT_BLINK_RATE) {
 		this.height = height;
@@ -85,11 +89,7 @@ export class PowerupBar {
 	}
 
 	expend() {
-		if (this.isPowerupEnabled()) {
-			this.clearBar();
-		} else {
-			throw new Error("Cannot expend powerup: " + this.pointsLeft() + " pts needed!");
-		}
+		throw new Error("Cannot call expend() in base class!");
 	}
 	clearBar() {
 		this.currentPoints = 0;
@@ -128,7 +128,44 @@ export class PowerupBar {
 		}
 	}
 
-	private pointsLeft(): number {
+	protected pointsLeft(): number {
 		return this.maxPoints - this.currentPoints;
+	}
+}
+
+export class RadialShotBar extends PowerupBar {
+	page: BallVsWildPage;
+
+	constructor(page: BallVsWildPage, width: number, height: number, maxPoints: number,
+			x: number = 0, y: number = 0, barFilledPhrase: string = "READY",
+			blinkRateMillis = PowerupBar.DEFAULT_BLINK_RATE) {
+		super(width, height, maxPoints, x, y, barFilledPhrase, blinkRateMillis);
+		this.page = page;
+	}
+
+	expend() {
+		console.log("yes");
+		if (this.isPowerupEnabled()) {
+			this.executeRadialShot();
+			this.clearBar();
+		} else {
+			throw new Error("Cannot expend powerup: " + this.pointsLeft() + " pts needed!");
+		}
+	}
+
+	executeRadialShot() {
+		let startingDegrees = Math.random() * 360;
+		let startingRadians = ExtendedMath.toRadians(startingDegrees);
+		for (var i = 0; i < 8; i++) {
+			let radians = startingRadians + (BallVsWildPage.RADIANS_PER_PROJECTILE * i);
+			let xVelocityRatio = Math.cos(radians);
+			let yVelocityRatio = Math.sin(radians);
+			let nextProjectile = new ShapeUnit(this.page.projectileShape, this.page.heroTopLeftX,
+			  this.page.heroTopLeftY, 7, BallVsWildPage.PROJECTILE_COLOR);
+			nextProjectile.velocityX = xVelocityRatio * BallVsWildPage.MIN_SHOT_VELOCITY;
+			nextProjectile.velocityY = yVelocityRatio * BallVsWildPage.MIN_SHOT_VELOCITY;
+
+			this.page.projectiles.push(nextProjectile);
+		}
 	}
 }
