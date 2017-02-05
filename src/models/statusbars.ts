@@ -45,7 +45,7 @@ export class HealthBar {
 }
 
 export class PowerupBar {
-	static readonly DEFAULT_BLINK_RATE: number = 500;
+	static readonly DEFAULT_BLINK_RATE: number = 350;
 
 	height: number;
 	width: number;
@@ -100,7 +100,8 @@ export class PowerupBar {
 	update(dtMilliseconds: number) {
 		if (this.isPowerupEnabled()) {
 			this.millisSinceBlink += dtMilliseconds;
-			if (this.millisSinceBlink >= this.blinkRateMillis) {
+			if (this.millisSinceBlink >= this.blinkRateMillis ||
+					(this.millisSinceBlink >= (0.5 * this.blinkRateMillis) && this.isTextShowing === false)) {
 				this.isTextShowing = !this.isTextShowing;
 				this.millisSinceBlink = 0;
 			}
@@ -115,8 +116,8 @@ export class PowerupBar {
 			ctx.fillRect(this.positionX, this.positionY, fillWidth, this.height);
 
 			if (this.isTextShowing) {
-				if (ctx.font != "18px Courier") {
-					ctx.font = "18px Courier";
+				if (ctx.font != "22px Courier") {
+					ctx.font = "22px Courier";
 				}
 				if (ctx.textAlign != "center") {
 					ctx.textAlign = "center";

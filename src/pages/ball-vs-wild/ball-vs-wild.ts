@@ -1,10 +1,10 @@
 import { Component } from "@angular/core";
 import { Storage } from "@ionic/storage";
-import { Unit, Enemy } from "../../models/unit";
+import { ShapeUnit, ImageUnit, Enemy } from "../../models/unit";
 import { Color } from "../../models/color";
 import { Shape, Circle } from "../../models/shapes";
 import { HealthBar, PowerupBar } from "../../models/statusbars";
-import { EnemyProducer } from "../../models/enemy.producer";
+import { EnemyProducer, ItemProducer } from "../../models/enemy.producer";
 import { ExtendedMath } from  "../../models/extendedmath";
 
 @Component({
@@ -26,12 +26,14 @@ export class BallVsWildPage {
   heroTopLeftY: number;
   score: number = 0;
   highScore: number = 0;
-  hero: Unit = null;
+  hero: ShapeUnit = null;
   healthBar: HealthBar = null;
   powerupBar: PowerupBar = null;
-  projectiles: Unit[] = [];
+  projectiles: ShapeUnit[] = [];
+  items: ImageUnit[] = [];
   enemies: Enemy[] = [];
   enemyGenerators: EnemyProducer[] = [];
+  itemGenerators: ItemProducer[] = [];
 
   canvasContext: CanvasRenderingContext2D = null;
   projectileShape: Shape = null;
@@ -92,9 +94,15 @@ export class BallVsWildPage {
 
   gameTick(dtMilliseconds: number){
     for (var i = 0; i < this.enemyGenerators.length; i++){
-      let enemy = this.enemyGenerators[i].tick(dtMilliseconds);
+      let enemy = <Enemy>this.enemyGenerators[i].tick(dtMilliseconds);
       if (enemy != null){
         this.enemies.push(enemy);
+      }
+    }
+    for (var i = 0; i < this.itemGenerators.length; i++){
+      let item = <ImageUnit>this.itemGenerators[i].tick(dtMilliseconds);
+      if (item != null){
+        this.items.push(item);
       }
     }
 
@@ -112,7 +120,20 @@ export class BallVsWildPage {
         projectile.draw(this.canvasContext);
       }
     }
-
+    this.items = this.items.filter(function(item){
+      return item.isAlive;
+    });
+    for (var i = 0; i < this.items.length; i++){
+      let item = this.items[i];
+      if (item.positionX < -item.size || item.positionX > (this.canvasContext.canvas.width + item.size) ||
+            item.positionY < -item.size || item.positionY > (this.canvasContext.canvas.height + item.size)){
+        item.isAlive = false;
+      }
+      else {
+        item.update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
+        item.draw(this.canvasContext);
+      }
+    }
     this.enemies = this.enemies.filter(function(enemy){
       return enemy.isAlive;
     });
@@ -131,9 +152,19 @@ export class BallVsWildPage {
       }
     }
 
-    for (var j = 0; j < this.enemies.length; j++){
-      for (var k = 0; k < this.projectiles.length; k++){
+    for (var k = 0; k < this.projectiles.length; k++){
+      for (var j = 0; j < this.enemies.length; j++){
         if (this.enemies[j].intersects(this.projectiles[k])){
+          if (this.enemies[j].color.hexValue === "#BE00FF"){
+            let randomColor = new Color(Math.random() * 255, Math.random() * 255, Math.random() * 255);
+            for (var i = 0; i < 4; i++){
+              let enemyMini = new Enemy(5, new Circle(this.canvasContext), this.enemies[j].positionX,
+                  this.enemies[j].positionY, 15, randomColor);
+              enemyMini.velocityX = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
+              enemyMini.velocityY = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
+              this.enemies.push(enemyMini);
+            }
+          }
           this.strikeEnemy(this.enemies[j], this.projectiles[k]);
         } else {
           let offsetX = this.enemies[j].positionX;
@@ -153,7 +184,44 @@ export class BallVsWildPage {
           let isIntersection = (discriminant >= 0);
 
           if (isIntersection) {
+            if (this.enemies[j].color.hexValue === "#BE00FF"){
+              let randomColor = new Color(Math.random() * 255, Math.random() * 255, Math.random() * 255);
+              for (var i = 0; i < 4; i++){
+                let enemyMini = new Enemy(5, new Circle(this.canvasContext), this.enemies[j].positionX,
+                    this.enemies[j].positionY, 15, randomColor);
+                enemyMini.velocityX = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
+                enemyMini.velocityY = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
+                this.enemies.push(enemyMini);
+              }
+            }
             this.strikeEnemy(this.enemies[j], this.projectiles[k]);
+          } else {
+            this.projectiles[k].reverseFrame(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
+          }
+        }
+      }
+      for (var j = 0; j < this.items.length; j++){
+        if (this.items[j].intersects(this.projectiles[k])){
+          this.strikeItem(this.items[j], this.projectiles[k]);
+        } else {
+          let offsetX = this.items[j].positionX;
+          let offsetY = this.items[j].positionY;
+          let x1 = this.projectiles[k].positionX + offsetX;
+          let y1 = this.projectiles[k].positionY + offsetY;
+
+          this.projectiles[k].update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
+          let x2 = this.projectiles[k].positionX + offsetX;
+          let y2 = this.projectiles[k].positionY + offsetY;
+
+          let dx_squared = Math.pow(x2 - x1, 2);
+          let dy_squared = Math.pow(y2 - y1, 2);
+          let dr = Math.sqrt(dx_squared + dy_squared);
+          let D = (x1 * y2) - (x2 * y1);
+          let discriminant = (Math.pow(this.items[j].size, 2) * Math.pow(dr, 2)) - Math.pow(D, 2);
+          let isIntersection = (discriminant >= 0);
+
+          if (isIntersection) {
+            this.strikeItem(this.items[j], this.projectiles[k]);
           } else {
             this.projectiles[k].reverseFrame(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
           }
@@ -183,10 +251,17 @@ export class BallVsWildPage {
     ctx.fillText(this.score.toString(), scoreX, 60);
   }
 
-  private strikeEnemy(enemy: Enemy, projectile: Unit) {
+  private strikeEnemy(enemy: Enemy, projectile: ShapeUnit) {
     this.score += enemy.value;
     this.powerupBar.addPoints(enemy.value);
     enemy.isAlive = false;
+    projectile.isAlive = false;
+  }
+  private strikeItem(item: ImageUnit, projectile: ShapeUnit) {
+    // TODO: refactor to be extensible for other item types
+    this.score += 5;
+    this.healthBar.giveHealth();
+    item.isAlive = false;
     projectile.isAlive = false;
   }
 
@@ -206,13 +281,14 @@ export class BallVsWildPage {
       this.healthBar.healthPoints = HealthBar.DEFAULT_MAX_HP;
       this.powerupBar.clearBar();
       this.projectiles = [];
+      this.items = [];
       this.enemies = [];
       this.score = 0;
     }
     else if (this.maxVelocity > 0) {
       let velocityScale = BallVsWildPage.MIN_SHOT_VELOCITY / Math.abs(this.maxVelocity);
 
-      let nextProjectile = new Unit(this.projectileShape, this.heroTopLeftX, this.heroTopLeftY,
+      let nextProjectile = new ShapeUnit(this.projectileShape, this.heroTopLeftX, this.heroTopLeftY,
         5, BallVsWildPage.PROJECTILE_COLOR);
       nextProjectile.velocityX = (velocityScale > 1) ? (this.maxVelocityX * velocityScale) : this.maxVelocityX;
       nextProjectile.velocityY = (velocityScale > 1) ? (this.maxVelocityY * velocityScale) : this.maxVelocityY;
@@ -231,7 +307,7 @@ export class BallVsWildPage {
         let radians = startingRadians + (BallVsWildPage.RADIANS_PER_PROJECTILE * i);
         let xVelocityRatio = Math.cos(radians);
         let yVelocityRatio = Math.sin(radians);
-        let nextProjectile = new Unit(this.projectileShape, this.heroTopLeftX, this.heroTopLeftY,
+        let nextProjectile = new ShapeUnit(this.projectileShape, this.heroTopLeftX, this.heroTopLeftY,
           5, BallVsWildPage.PROJECTILE_COLOR);
         nextProjectile.velocityX = xVelocityRatio * BallVsWildPage.MIN_SHOT_VELOCITY;
         nextProjectile.velocityY = yVelocityRatio * BallVsWildPage.MIN_SHOT_VELOCITY;
@@ -261,10 +337,12 @@ export class BallVsWildPage {
     this.heroTopLeftY = (this.canvasContext.canvas.height / 2) - (size / 2);
     let heroColor = Color.fromHexValue("#0200FF");
     let heroShape = new Circle(this.canvasContext);
-    this.hero = new Unit(heroShape, this.heroTopLeftX, this.heroTopLeftY, size, heroColor);
+    this.hero = new ShapeUnit(heroShape, this.heroTopLeftX, this.heroTopLeftY, size, heroColor);
 
     this.enemyGenerators.push(new EnemyProducer(10, 20, 100, 5000, this.hero, Color.fromHexValue("#FFF000"), this.canvasContext));
+    this.enemyGenerators.push(new EnemyProducer(30, 40, 70, 12000, this.hero, Color.fromHexValue("#BE00FF"), this.canvasContext));
     this.enemyGenerators.push(new EnemyProducer(25, 10, 175, 8000, this.hero, Color.fromHexValue("#00FF00"), this.canvasContext));
+    this.itemGenerators.push(new ItemProducer("img/item-health.png", 30, 250, 10000, this.canvasContext));
   }
 }
 
