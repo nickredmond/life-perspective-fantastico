@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<widget id="redmond.ionic.ballvswild" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="redmond.ionic.ballvswild" version="1.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
   <name>Ball vs Wild</name>
   <description>Classic arcade shooter game.</description>
   <author email="nicholas.john.redmond@gmail.com" href="https://github.com/nickredmond">Nick Redmond</author>
@@ -38,14 +38,14 @@
   <preference name="SplashMaintainAspectRatio" value="true"/>
   <preference name="FadeSplashScreenDuration" value="300"/>
   <preference name="Orientation" value="portrait"/>
-  <preference name="ShowSplashScreen" value="true" />
+  <preference name="ShowSplashScreen" value="true"/>
   <preference name="SplashScreen" value="screen"/>
   <preference name="SplashScreenDelay" value="3000"/>
-  <preference name="AutoHideSplashScreen" value="true" />
-  <preference name="SplashShowOnlyFirstTime" value="false" />
+  <preference name="AutoHideSplashScreen" value="true"/>
+  <preference name="SplashShowOnlyFirstTime" value="false"/>
   <preference name="FadeSplashScreen" value="false"/>
   <feature name="SplashScreen">
-    <param name="android-package" value="org.apache.cordova.splashscreen.SplashScreen" />
+    <param name="android-package" value="org.apache.cordova.splashscreen.SplashScreen"/>
   </feature>
   <feature name="StatusBar">
     <param name="ios-package" onload="true" value="CDVStatusBar"/>
