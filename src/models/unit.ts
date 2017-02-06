@@ -15,13 +15,21 @@ export abstract class Unit {
 		this.size = size;
 	}
 
-	public intersects(otherUnit: Unit) {
-		return !(otherUnit.positionX > (this.positionX + this.size) ||
-			(otherUnit.positionX + otherUnit.size) < this.positionX ||
-			otherUnit.positionY > (this.positionY + this.size) ||
-			(otherUnit.positionY + otherUnit.size) < this.positionY)
+	public intersects(otherUnit: Unit, isEnemy = false): boolean {
+		// let trueSize = isEnemy ? this.size * 1.5 : this.size;
+		// return !(otherUnit.positionX > (this.positionX + trueSize) ||
+		// 	(otherUnit.positionX + otherUnit.size) < this.positionX ||
+		// 	otherUnit.positionY > (this.positionY + trueSize) ||
+		// 	(otherUnit.positionY + otherUnit.size) < this.positionY)
+		let x_diff_squared = Math.pow(otherUnit.positionX - this.positionX, 2);
+		let y_diff_squared = Math.pow(otherUnit.positionY - this.positionY, 2);
+		let distance = Math.sqrt(x_diff_squared + y_diff_squared);
+		return distance < (this.size + otherUnit.size);
 	}
 
+	radius(): number {
+		return this.size / 2;
+	}
 	public update(dt) {
 		this.positionX += (this.velocityX * dt);
 		this.positionY += (this.velocityY * dt);
@@ -43,7 +51,7 @@ export class ShapeUnit extends Unit {
 	}
 
 	public draw(ctx: CanvasRenderingContext2D) {
-    	this.shape.draw(this.color, this.positionX, this.positionY, this.size);
+    	this.shape.draw(this.color, this.positionX + this.radius(), this.positionY + this.radius(), this.size);
 	}
 }
 
@@ -61,11 +69,34 @@ export class ImageUnit extends Unit {
 	}
 }
 
-export class Enemy extends ShapeUnit {
+export class Enemy extends ImageUnit {
 	value: number;
+	imgSrc: string;
 
-	constructor(value: number, shape: Shape, x: number = 0, y: number = 0, size: number = 0, color: Color = new Color()){
-		super(shape, x, y, size, color);
+	constructor(value: number, imgSrc: string, x: number = 0, y: number = 0, size: number = 0){
+		super(imgSrc, x, y, size);
 		this.value = value;
+		this.imgSrc = imgSrc;
+	}
+
+	radius(): number {
+		return this.size / 1.5;
+	}
+	public draw(ctx: CanvasRenderingContext2D) {
+		let isFlipped = false;
+		if (this.velocityX < 0) {
+			ctx.translate(ctx.canvas.width, 0);
+			ctx.scale(-1, 1);
+			isFlipped = true;
+		}
+
+		let image = new Image();
+		image.src = this.imgSrc;
+		ctx.drawImage(image, (this.positionX - this.radius()), (this.positionY - this.radius()), this.size, this.size);
+
+		if (isFlipped) {
+			ctx.translate(ctx.canvas.width, 0)
+			ctx.scale(-1, 1);
+		}
 	}
 }

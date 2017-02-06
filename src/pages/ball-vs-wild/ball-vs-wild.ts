@@ -3,7 +3,7 @@ import { Storage } from "@ionic/storage";
 import { ShapeUnit, ImageUnit, Enemy } from "../../models/unit";
 import { Color } from "../../models/color";
 import { Shape, Circle } from "../../models/shapes";
-import { HealthBar, PowerupBar } from "../../models/statusbars";
+import { HealthBar, RadialShotBar } from "../../models/statusbars";
 import { EnemyProducer, ItemProducer } from "../../models/enemy.producer";
 import { ExtendedMath } from  "../../models/extendedmath";
 
@@ -17,6 +17,18 @@ export class BallVsWildPage {
   static readonly MIN_SHOT_VELOCITY: number = 400;
   static readonly PROJECTILE_COLOR: Color = Color.fromHexValue("#FF0000");
   static readonly RADIANS_PER_PROJECTILE: number = ExtendedMath.toRadians(45);
+  static readonly LARGE_BEE = {
+    "imgSrc": "img/bee-lg-right.png"
+  };
+  static readonly MEDIUM_BEE = {
+    "imgSrc": "img/bee-md-right.png"
+  };
+  static readonly SMALL_BEE = {
+    "imgSrc": "img/bee-sm-right.png"
+  };
+  static readonly MINI_BEE = {
+    "imgSrc": "img/bee-mini-right.png"
+  };
 
   maxVelocityX: number = 0;
   maxVelocityY: number = 0;
@@ -28,7 +40,7 @@ export class BallVsWildPage {
   highScore: number = 0;
   hero: ShapeUnit = null;
   healthBar: HealthBar = null;
-  powerupBar: PowerupBar = null;
+  powerupBar: RadialShotBar = null;
   projectiles: ShapeUnit[] = [];
   items: ImageUnit[] = [];
   enemies: Enemy[] = [];
@@ -154,15 +166,28 @@ export class BallVsWildPage {
 
     for (var k = 0; k < this.projectiles.length; k++){
       for (var j = 0; j < this.enemies.length; j++){
-        if (this.enemies[j].intersects(this.projectiles[k])){
-          if (this.enemies[j].color.hexValue === "#BE00FF"){
+        if (this.enemies[j].intersects(this.projectiles[k], true)){
+          if (this.enemies[j].imgSrc === BallVsWildPage.LARGE_BEE["imgSrc"]){
             let randomColor = new Color(Math.random() * 255, Math.random() * 255, Math.random() * 255);
-            for (var i = 0; i < 4; i++){
-              let enemyMini = new Enemy(5, new Circle(this.canvasContext), this.enemies[j].positionX,
-                  this.enemies[j].positionY, 15, randomColor);
-              enemyMini.velocityX = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
-              enemyMini.velocityY = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
-              this.enemies.push(enemyMini);
+
+            let chance = Math.random();
+            if (chance > 0.5) {
+              for (var i = 0; i < 4; i++){
+                let itemMini = new ImageUnit("img/item-health.png", this.enemies[j].positionX,
+                  this.enemies[j].positionY, 30);
+                itemMini.velocityX = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
+                itemMini.velocityY = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
+                this.items.push(<ImageUnit>itemMini);
+              }
+            }
+            else {
+              for (var i = 0; i < 4; i++){
+                let enemyMini = new Enemy(5, BallVsWildPage.MINI_BEE["imgSrc"], this.enemies[j].positionX,
+                    this.enemies[j].positionY, 15);
+                enemyMini.velocityX = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
+                enemyMini.velocityY = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
+                this.enemies.push(<Enemy>enemyMini);
+              }
             }
           }
           this.strikeEnemy(this.enemies[j], this.projectiles[k]);
@@ -184,11 +209,11 @@ export class BallVsWildPage {
           let isIntersection = (discriminant >= 0);
 
           if (isIntersection) {
-            if (this.enemies[j].color.hexValue === "#BE00FF"){
+            if (this.enemies[j].imgSrc === BallVsWildPage.LARGE_BEE["imgSrc"]){
               let randomColor = new Color(Math.random() * 255, Math.random() * 255, Math.random() * 255);
               for (var i = 0; i < 4; i++){
-                let enemyMini = new Enemy(5, new Circle(this.canvasContext), this.enemies[j].positionX,
-                    this.enemies[j].positionY, 15, randomColor);
+                let enemyMini = new Enemy(5, BallVsWildPage.MINI_BEE["imgSrc"], this.enemies[j].positionX,
+                    this.enemies[j].positionY, 15);
                 enemyMini.velocityX = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
                 enemyMini.velocityY = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
                 this.enemies.push(enemyMini);
@@ -289,7 +314,7 @@ export class BallVsWildPage {
       let velocityScale = BallVsWildPage.MIN_SHOT_VELOCITY / Math.abs(this.maxVelocity);
 
       let nextProjectile = new ShapeUnit(this.projectileShape, this.heroTopLeftX, this.heroTopLeftY,
-        5, BallVsWildPage.PROJECTILE_COLOR);
+        7, BallVsWildPage.PROJECTILE_COLOR);
       nextProjectile.velocityX = (velocityScale > 1) ? (this.maxVelocityX * velocityScale) : this.maxVelocityX;
       nextProjectile.velocityY = (velocityScale > 1) ? (this.maxVelocityY * velocityScale) : this.maxVelocityY;
       this.projectiles.push(nextProjectile);
@@ -300,20 +325,6 @@ export class BallVsWildPage {
   onDoubleTap(event) {
     if (this.powerupBar.isPowerupEnabled()) {
       this.powerupBar.expend();
-
-      let startingDegrees = Math.random() * 360;
-      let startingRadians = ExtendedMath.toRadians(startingDegrees);
-      for (var i = 0; i < 8; i++) {
-        let radians = startingRadians + (BallVsWildPage.RADIANS_PER_PROJECTILE * i);
-        let xVelocityRatio = Math.cos(radians);
-        let yVelocityRatio = Math.sin(radians);
-        let nextProjectile = new ShapeUnit(this.projectileShape, this.heroTopLeftX, this.heroTopLeftY,
-          5, BallVsWildPage.PROJECTILE_COLOR);
-        nextProjectile.velocityX = xVelocityRatio * BallVsWildPage.MIN_SHOT_VELOCITY;
-        nextProjectile.velocityY = yVelocityRatio * BallVsWildPage.MIN_SHOT_VELOCITY;
-
-        this.projectiles.push(nextProjectile);
-      }
     }
   }
 
@@ -330,7 +341,7 @@ export class BallVsWildPage {
     let powerupHeight = 15;
     let margin = 0.1 * window.innerWidth;
     let yPosition = window.innerHeight - powerupHeight - 15;
-    this.powerupBar = new PowerupBar(powerupWidth, powerupHeight, 150, margin, yPosition, "DOUBLE-TAP");
+    this.powerupBar = new RadialShotBar(this, powerupWidth, powerupHeight, 150, margin, yPosition, "DOUBLE-TAP");
 
     let size = 25;
     this.heroTopLeftX = (this.canvasContext.canvas.width / 2) - (size / 2);
@@ -339,9 +350,9 @@ export class BallVsWildPage {
     let heroShape = new Circle(this.canvasContext);
     this.hero = new ShapeUnit(heroShape, this.heroTopLeftX, this.heroTopLeftY, size, heroColor);
 
-    this.enemyGenerators.push(new EnemyProducer(10, 20, 100, 5000, this.hero, Color.fromHexValue("#FFF000"), this.canvasContext));
-    this.enemyGenerators.push(new EnemyProducer(30, 40, 70, 12000, this.hero, Color.fromHexValue("#BE00FF"), this.canvasContext));
-    this.enemyGenerators.push(new EnemyProducer(25, 10, 175, 8000, this.hero, Color.fromHexValue("#00FF00"), this.canvasContext));
+    this.enemyGenerators.push(new EnemyProducer(10, Math.max(20, this.canvasContext.canvas.width * 0.15), 100, 5000, this.hero, BallVsWildPage.MEDIUM_BEE["imgSrc"], this.canvasContext));
+    this.enemyGenerators.push(new EnemyProducer(30, Math.max(40, this.canvasContext.canvas.width * 0.22), 70, 7500, this.hero, BallVsWildPage.LARGE_BEE["imgSrc"], this.canvasContext));
+    this.enemyGenerators.push(new EnemyProducer(25, Math.max(10, this.canvasContext.canvas.width * 0.09), 175, 8000, this.hero, BallVsWildPage.SMALL_BEE["imgSrc"], this.canvasContext));
     this.itemGenerators.push(new ItemProducer("img/item-health.png", 30, 250, 10000, this.canvasContext));
   }
 }
