@@ -6,6 +6,7 @@ import { Shape, Circle } from "../../models/shapes";
 import { HealthBar, RadialShotBar } from "../../models/statusbars";
 import { EnemyProducer, ItemProducer } from "../../models/enemy.producer";
 import { ExtendedMath } from  "../../models/extendedmath";
+import { Dimensions } from "../../models/dimensions";
 
 @Component({
   selector: 'ball-vs-wild',
@@ -18,17 +19,28 @@ export class BallVsWildPage {
   static readonly PROJECTILE_COLOR: Color = Color.fromHexValue("#FF0000");
   static readonly RADIANS_PER_PROJECTILE: number = ExtendedMath.toRadians(45);
   static readonly LARGE_BEE = {
-    "imgSrc": "img/bee-lg-right.png"
+    leftDimensions: new Dimensions(600, 150, 150, 150),
+    rightDimensions: new Dimensions(0, 0, 150, 150),
+    name: "LG_BEE"
   };
   static readonly MEDIUM_BEE = {
-    "imgSrc": "img/bee-md-right.png"
+    leftDimensions: new Dimensions(450, 150, 150, 150),
+    rightDimensions: new Dimensions(150, 0, 150, 150),
+    name: "MD_BEE"
   };
   static readonly SMALL_BEE = {
-    "imgSrc": "img/bee-sm-right.png"
+    leftDimensions: new Dimensions(300, 150, 150, 150),
+    rightDimensions: new Dimensions(300, 0, 150, 150),
+    name: "SM_BEE"
   };
   static readonly MINI_BEE = {
-    "imgSrc": "img/bee-mini-right.png"
+    leftDimensions: new Dimensions(150, 150, 150, 150),
+    rightDimensions: new Dimensions(450, 0, 150, 150),
+    name: "XS_BEE"
   };
+  static readonly HEALTH_ITEM = {
+    srcDimensions: new Dimensions(600, 0, 150, 150)
+  }
 
   maxVelocityX: number = 0;
   maxVelocityY: number = 0;
@@ -47,11 +59,15 @@ export class BallVsWildPage {
   enemyGenerators: EnemyProducer[] = [];
   itemGenerators: ItemProducer[] = [];
 
+  spritesImg: HTMLImageElement;
   canvasContext: CanvasRenderingContext2D = null;
   projectileShape: Shape = null;
   storage: Storage;
 
   constructor(storage: Storage) {
+    this.spritesImg = new Image();
+    this.spritesImg.src = "img/sprites.png";
+
     this.storage = storage;
     this.storage.get("highScore").then((val) => {
       if (val === null){
@@ -167,39 +183,19 @@ export class BallVsWildPage {
     for (var k = 0; k < this.projectiles.length; k++){
       for (var j = 0; j < this.enemies.length; j++){
         if (this.enemies[j].intersects(this.projectiles[k], true)){
-          if (this.enemies[j].imgSrc === BallVsWildPage.LARGE_BEE["imgSrc"]){
-            let randomColor = new Color(Math.random() * 255, Math.random() * 255, Math.random() * 255);
-
-            let chance = Math.random();
-            if (chance > 0.5) {
-              for (var i = 0; i < 4; i++){
-                let itemMini = new ImageUnit("img/item-health.png", this.enemies[j].positionX,
-                  this.enemies[j].positionY, 30);
-                itemMini.velocityX = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
-                itemMini.velocityY = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
-                this.items.push(<ImageUnit>itemMini);
-              }
-            }
-            else {
-              for (var i = 0; i < 4; i++){
-                let enemyMini = new Enemy(5, BallVsWildPage.MINI_BEE["imgSrc"], this.enemies[j].positionX,
-                    this.enemies[j].positionY, 15);
-                enemyMini.velocityX = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
-                enemyMini.velocityY = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
-                this.enemies.push(<Enemy>enemyMini);
-              }
-            }
+          if (this.enemies[j].name === BallVsWildPage.LARGE_BEE["name"]){
+            this.explodeLargeBee(this.enemies[j]);
           }
           this.strikeEnemy(this.enemies[j], this.projectiles[k]);
         } else {
           let offsetX = this.enemies[j].positionX;
           let offsetY = this.enemies[j].positionY;
-          let x1 = this.projectiles[k].positionX + offsetX;
-          let y1 = this.projectiles[k].positionY + offsetY;
-
-          this.projectiles[k].update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
           let x2 = this.projectiles[k].positionX + offsetX;
           let y2 = this.projectiles[k].positionY + offsetY;
+
+          this.projectiles[k].reverseFrame(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
+          let x1 = this.projectiles[k].positionX + offsetX;
+          let y1 = this.projectiles[k].positionY + offsetY;
 
           let dx_squared = Math.pow(x2 - x1, 2);
           let dy_squared = Math.pow(y2 - y1, 2);
@@ -209,19 +205,12 @@ export class BallVsWildPage {
           let isIntersection = (discriminant >= 0);
 
           if (isIntersection) {
-            if (this.enemies[j].imgSrc === BallVsWildPage.LARGE_BEE["imgSrc"]){
-              let randomColor = new Color(Math.random() * 255, Math.random() * 255, Math.random() * 255);
-              for (var i = 0; i < 4; i++){
-                let enemyMini = new Enemy(5, BallVsWildPage.MINI_BEE["imgSrc"], this.enemies[j].positionX,
-                    this.enemies[j].positionY, 15);
-                enemyMini.velocityX = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
-                enemyMini.velocityY = (2 * Math.random() * BallVsWildPage.MIN_SHOT_VELOCITY) - BallVsWildPage.MIN_SHOT_VELOCITY;
-                this.enemies.push(enemyMini);
-              }
+            if (this.enemies[j].name === BallVsWildPage.LARGE_BEE["name"]){
+              this.explodeLargeBee(this.enemies[j]);
             }
             this.strikeEnemy(this.enemies[j], this.projectiles[k]);
           } else {
-            this.projectiles[k].reverseFrame(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
+            this.projectiles[k].update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
           }
         }
       }
@@ -231,12 +220,12 @@ export class BallVsWildPage {
         } else {
           let offsetX = this.items[j].positionX;
           let offsetY = this.items[j].positionY;
-          let x1 = this.projectiles[k].positionX + offsetX;
-          let y1 = this.projectiles[k].positionY + offsetY;
-
-          this.projectiles[k].update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
           let x2 = this.projectiles[k].positionX + offsetX;
           let y2 = this.projectiles[k].positionY + offsetY;
+
+          this.projectiles[k].reverseFrame(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
+          let x1 = this.projectiles[k].positionX + offsetX;
+          let y1 = this.projectiles[k].positionY + offsetY;
 
           let dx_squared = Math.pow(x2 - x1, 2);
           let dy_squared = Math.pow(y2 - y1, 2);
@@ -248,7 +237,7 @@ export class BallVsWildPage {
           if (isIntersection) {
             this.strikeItem(this.items[j], this.projectiles[k]);
           } else {
-            this.projectiles[k].reverseFrame(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
+            this.projectiles[k].update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
           }
         }
       }
@@ -276,6 +265,29 @@ export class BallVsWildPage {
     ctx.fillText(this.score.toString(), scoreX, 60);
   }
 
+  private explodeLargeBee(enemy) {
+    let page = BallVsWildPage;
+    let chance = Math.random();
+
+    if (chance > 0.5) {
+      for (var i = 0; i < 4; i++){
+        let itemMini = new ImageUnit(this.spritesImg, page.HEALTH_ITEM["srcDimensions"], enemy.positionX,
+          enemy.positionY, 30);
+        itemMini.velocityX = (2 * Math.random() * page.MIN_SHOT_VELOCITY) - page.MIN_SHOT_VELOCITY;
+        itemMini.velocityY = (2 * Math.random() * page.MIN_SHOT_VELOCITY) - page.MIN_SHOT_VELOCITY;
+        this.items.push(<ImageUnit>itemMini);
+      }
+    }
+    else {
+      for (var i = 0; i < 4; i++){
+        let enemyMini = new Enemy(5, this.spritesImg ,page.MINI_BEE["leftDimensions"], page.MINI_BEE["rightDimensions"],
+          enemy.positionX, enemy.positionY, 15, page.MINI_BEE["name"]);
+        enemyMini.velocityX = (2 * Math.random() * page.MIN_SHOT_VELOCITY) - page.MIN_SHOT_VELOCITY;
+        enemyMini.velocityY = (2 * Math.random() * page.MIN_SHOT_VELOCITY) - page.MIN_SHOT_VELOCITY;
+        this.enemies.push(<Enemy>enemyMini);
+      }
+    }
+  }
   private strikeEnemy(enemy: Enemy, projectile: ShapeUnit) {
     this.score += enemy.value;
     this.powerupBar.addPoints(enemy.value);
@@ -350,10 +362,14 @@ export class BallVsWildPage {
     let heroShape = new Circle(this.canvasContext);
     this.hero = new ShapeUnit(heroShape, this.heroTopLeftX, this.heroTopLeftY, size, heroColor);
 
-    this.enemyGenerators.push(new EnemyProducer(10, Math.max(20, this.canvasContext.canvas.width * 0.15), 100, 5000, this.hero, BallVsWildPage.MEDIUM_BEE["imgSrc"], this.canvasContext));
-    this.enemyGenerators.push(new EnemyProducer(30, Math.max(40, this.canvasContext.canvas.width * 0.22), 70, 7500, this.hero, BallVsWildPage.LARGE_BEE["imgSrc"], this.canvasContext));
-    this.enemyGenerators.push(new EnemyProducer(25, Math.max(10, this.canvasContext.canvas.width * 0.09), 175, 8000, this.hero, BallVsWildPage.SMALL_BEE["imgSrc"], this.canvasContext));
-    this.itemGenerators.push(new ItemProducer("img/item-health.png", 30, 250, 10000, this.canvasContext));
+    let page = BallVsWildPage;
+    this.enemyGenerators.push(new EnemyProducer(10, Math.max(20, this.canvasContext.canvas.width * 0.15), 100, 5000, this.hero,
+      this.spritesImg, page.MEDIUM_BEE["leftDimensions"], page.MEDIUM_BEE["rightDimensions"], this.canvasContext, page.MEDIUM_BEE["name"]));
+    this.enemyGenerators.push(new EnemyProducer(30, Math.max(40, this.canvasContext.canvas.width * 0.22), 70, 7500, this.hero,
+      this.spritesImg, page.LARGE_BEE["leftDimensions"], page.LARGE_BEE["rightDimensions"], this.canvasContext, page.LARGE_BEE["name"]));
+    this.enemyGenerators.push(new EnemyProducer(25, Math.max(10, this.canvasContext.canvas.width * 0.09), 175, 8000, this.hero,
+      this.spritesImg, page.SMALL_BEE["leftDimensions"], page.SMALL_BEE["rightDimensions"], this.canvasContext, page.SMALL_BEE["name"]));
+    this.itemGenerators.push(new ItemProducer(this.spritesImg, page.HEALTH_ITEM["srcDimensions"], 30, 250, 10000, this.canvasContext));
   }
 }
 

@@ -1,5 +1,6 @@
 import { Color } from "./color";
 import { Shape } from "./shapes";
+import { Dimensions } from "./dimensions";
 
 export abstract class Unit {
 	isAlive: boolean = true;
@@ -16,15 +17,11 @@ export abstract class Unit {
 	}
 
 	public intersects(otherUnit: Unit, isEnemy = false): boolean {
-		// let trueSize = isEnemy ? this.size * 1.5 : this.size;
-		// return !(otherUnit.positionX > (this.positionX + trueSize) ||
-		// 	(otherUnit.positionX + otherUnit.size) < this.positionX ||
-		// 	otherUnit.positionY > (this.positionY + trueSize) ||
-		// 	(otherUnit.positionY + otherUnit.size) < this.positionY)
 		let x_diff_squared = Math.pow(otherUnit.positionX - this.positionX, 2);
 		let y_diff_squared = Math.pow(otherUnit.positionY - this.positionY, 2);
 		let distance = Math.sqrt(x_diff_squared + y_diff_squared);
-		return distance < (this.size + otherUnit.size);
+		let size = isEnemy ? (this.size * 0.8) : this.size;
+		return distance < (size + otherUnit.size);
 	}
 
 	radius(): number {
@@ -56,47 +53,41 @@ export class ShapeUnit extends Unit {
 }
 
 export class ImageUnit extends Unit {
-	image: HTMLImageElement;
+	sourceImg: HTMLImageElement;
+	srcDimensions: Dimensions;
 
-	constructor(imgSrc: string, x: number = 0, y: number = 0, size: number = 0) {
+	constructor(spritesImage: HTMLImageElement, srcDimensions: Dimensions,
+			x: number = 0, y: number = 0, size: number = 0) {
 		super(x, y, size);
-		this.image = new Image(size, size);
-		this.image.src = imgSrc;
+		this.sourceImg = spritesImage;
+		this.srcDimensions = srcDimensions;
 	}
 
 	public draw(ctx: CanvasRenderingContext2D) {
-    	ctx.drawImage(this.image, this.positionX, this.positionY, this.size, this.size);
+    	ctx.drawImage(this.sourceImg, this.srcDimensions.x, this.srcDimensions.y, this.srcDimensions.width,
+    		this.srcDimensions.height, this.positionX, this.positionY, this.size, this.size);
 	}
 }
 
 export class Enemy extends ImageUnit {
 	value: number;
-	imgSrc: string;
+	leftSrcDimensions: Dimensions;
+	name: string;
 
-	constructor(value: number, imgSrc: string, x: number = 0, y: number = 0, size: number = 0){
-		super(imgSrc, x, y, size);
+	constructor(value: number, spritesImage: HTMLImageElement, leftDimensions: Dimensions, rightDimensions: Dimensions,
+			x: number = 0, y: number = 0, size: number = 0, name: string = null){
+		super(spritesImage, rightDimensions, x, y, size);
 		this.value = value;
-		this.imgSrc = imgSrc;
+		this.leftSrcDimensions = leftDimensions;
+		this.name = name;
 	}
 
 	radius(): number {
 		return this.size / 1.5;
 	}
 	public draw(ctx: CanvasRenderingContext2D) {
-		let isFlipped = false;
-		if (this.velocityX < 0) {
-			ctx.translate(ctx.canvas.width, 0);
-			ctx.scale(-1, 1);
-			isFlipped = true;
-		}
-
-		let image = new Image();
-		image.src = this.imgSrc;
-		ctx.drawImage(image, (this.positionX - this.radius()), (this.positionY - this.radius()), this.size, this.size);
-
-		if (isFlipped) {
-			ctx.translate(ctx.canvas.width, 0)
-			ctx.scale(-1, 1);
-		}
+		let srcRect = (this.velocityX < 0) ? this.leftSrcDimensions : this.srcDimensions;
+		ctx.drawImage(this.sourceImg, srcRect.x, srcRect.y, srcRect.width, srcRect.height,
+			(this.positionX - this.radius()), (this.positionY - this.radius()), this.size, this.size);
 	}
 }

@@ -1,6 +1,5 @@
-import { Color } from "./color";
 import { Enemy, ImageUnit, Unit } from "./unit";
-import { Circle } from "./shapes";
+import { Dimensions } from "./dimensions";
 
 export class UnitProducer {
 	size: number;
@@ -39,15 +38,22 @@ export class UnitProducer {
 
 export class EnemyProducer extends UnitProducer {
   value: number;
-  imgSrc: string;
+  srcImg: HTMLImageElement;
+  leftSrc: Dimensions;
+  rightSrc: Dimensions;
   hero: Unit;
+  enemyName: string;
 
   constructor(value: number, size: number, velocity: number, spawnRateMillis: number,
-      hero: Unit, imgSrc: string, ctx: CanvasRenderingContext2D){
+      hero: Unit, srcImg: HTMLImageElement, leftSrc: Dimensions, rightSrc: Dimensions,
+      ctx: CanvasRenderingContext2D, enemyName: string = null){
     super(size, velocity, spawnRateMillis, ctx);
     this.hero = hero;
     this.value = value;
-    this.imgSrc = imgSrc;
+    this.srcImg = srcImg;
+    this.leftSrc = leftSrc;
+    this.rightSrc = rightSrc;
+    this.enemyName = enemyName;
   }
 
   public tick(dtMilliseconds, generateFunction = null): Unit {
@@ -76,7 +82,8 @@ export class EnemyProducer extends UnitProducer {
       y = Math.random() * ctx.canvas.height;
     }
 
-    let enemy = new Enemy((<EnemyProducer>producer).value, (<EnemyProducer>producer).imgSrc, x, y, size);
+    let maker = <EnemyProducer>producer;
+    let enemy = new Enemy(maker.value, maker.srcImg, maker.leftSrc, maker.rightSrc, x, y, size, maker.enemyName);
     let deltaX = (<EnemyProducer>producer).hero.positionX - x;
     let deltaY = (<EnemyProducer>producer).hero.positionY - y;
     let deltaVel = Math.sqrt((deltaX * deltaX) + (deltaY * deltaY));
@@ -89,12 +96,14 @@ export class EnemyProducer extends UnitProducer {
 }
 
 export class ItemProducer extends UnitProducer {
-  imgSrc: string;
+  srcImg: HTMLImageElement;
+  srcDimensions: Dimensions;
 
-  constructor(imgSrc: string, size: number, velocity: number, spawnRateMillis: number,
-      ctx: CanvasRenderingContext2D){
+  constructor(srcImg: HTMLImageElement, srcDimensions: Dimensions, size: number, velocity: number,
+      spawnRateMillis: number, ctx: CanvasRenderingContext2D){
     super(size, velocity, spawnRateMillis, ctx);
-    this.imgSrc = imgSrc;
+    this.srcImg = srcImg;
+    this.srcDimensions = srcDimensions;
   }
 
   tick(dtMilliseconds: number, generateFunction = null): Unit {
@@ -131,7 +140,8 @@ export class ItemProducer extends UnitProducer {
       deltaY = (Math.random() * ctx.canvas.height) - y;
     }
 
-    let item = new ImageUnit((<ItemProducer>producer).imgSrc, x, y, size);
+    let maker = <ItemProducer>producer;
+    let item = new ImageUnit(maker.srcImg, maker.srcDimensions, x, y, size);
     let deltaVel = Math.sqrt((deltaX * deltaX) + (deltaY * deltaY));
     let scale = producer.velocity / deltaVel;
     item.velocityX = scale * deltaX;
