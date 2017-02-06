@@ -350,9 +350,9 @@ export class BallVsWildPage {
     let heroShape = new Circle(this.canvasContext);
     this.hero = new ShapeUnit(heroShape, this.heroTopLeftX, this.heroTopLeftY, size, heroColor);
 
-    this.enemyGenerators.push(new EnemyProducer(10, Math.max(20, this.canvasContext.canvas.width * 0.12), 100, 5000, this.hero, BallVsWildPage.MEDIUM_BEE["imgSrc"], this.canvasContext));
-    this.enemyGenerators.push(new EnemyProducer(30, Math.max(40, this.canvasContext.canvas.width * 0.2), 70, 7500, this.hero, BallVsWildPage.LARGE_BEE["imgSrc"], this.canvasContext));
-    this.enemyGenerators.push(new EnemyProducer(25, Math.max(10, this.canvasContext.canvas.width * 0.07), 175, 8000, this.hero, BallVsWildPage.SMALL_BEE["imgSrc"], this.canvasContext));
+    this.enemyGenerators.push(new EnemyProducer(10, Math.max(20, this.canvasContext.canvas.width * 0.15), 100, 5000, this.hero, BallVsWildPage.MEDIUM_BEE["imgSrc"], this.canvasContext));
+    this.enemyGenerators.push(new EnemyProducer(30, Math.max(40, this.canvasContext.canvas.width * 0.22), 70, 7500, this.hero, BallVsWildPage.LARGE_BEE["imgSrc"], this.canvasContext));
+    this.enemyGenerators.push(new EnemyProducer(25, Math.max(10, this.canvasContext.canvas.width * 0.09), 175, 8000, this.hero, BallVsWildPage.SMALL_BEE["imgSrc"], this.canvasContext));
     this.itemGenerators.push(new ItemProducer("img/item-health.png", 30, 250, 10000, this.canvasContext));
   }
 }
