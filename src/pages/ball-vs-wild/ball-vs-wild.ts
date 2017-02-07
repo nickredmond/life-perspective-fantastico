@@ -182,7 +182,7 @@ export class BallVsWildPage {
 
     for (var k = 0; k < this.projectiles.length; k++){
       for (var j = 0; j < this.enemies.length; j++){
-        if (this.enemies[j].intersects(this.projectiles[k], true)){
+        if (this.enemies[j].intersects(this.projectiles[k])){
           if (this.enemies[j].name === BallVsWildPage.LARGE_BEE["name"]){
             this.explodeLargeBee(this.enemies[j]);
           }
@@ -325,8 +325,9 @@ export class BallVsWildPage {
     else if (this.maxVelocity > 0) {
       let velocityScale = BallVsWildPage.MIN_SHOT_VELOCITY / Math.abs(this.maxVelocity);
 
-      let nextProjectile = new ShapeUnit(this.projectileShape, this.heroTopLeftX, this.heroTopLeftY,
-        7, BallVsWildPage.PROJECTILE_COLOR);
+      let size = Math.max(10, this.canvasContext.canvas.width * 0.04);
+      let nextProjectile = new ShapeUnit(this.projectileShape, this.hero.positionX, this.hero.positionY,
+        size, BallVsWildPage.PROJECTILE_COLOR);
       nextProjectile.velocityX = (velocityScale > 1) ? (this.maxVelocityX * velocityScale) : this.maxVelocityX;
       nextProjectile.velocityY = (velocityScale > 1) ? (this.maxVelocityY * velocityScale) : this.maxVelocityY;
       this.projectiles.push(nextProjectile);
@@ -339,6 +340,7 @@ export class BallVsWildPage {
       this.powerupBar.expend();
     }
   }
+  onSingleTap(event) {}
 
   ionViewDidEnter() {
   	let canvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
@@ -355,12 +357,14 @@ export class BallVsWildPage {
     let yPosition = window.innerHeight - powerupHeight - 15;
     this.powerupBar = new RadialShotBar(this, powerupWidth, powerupHeight, 150, margin, yPosition, "DOUBLE-TAP");
 
-    let size = 25;
-    this.heroTopLeftX = (this.canvasContext.canvas.width / 2) - (size / 2);
-    this.heroTopLeftY = (this.canvasContext.canvas.height / 2) - (size / 2);
+    let size = this.canvasContext.canvas.width * 0.13;
+    let centerX = this.canvasContext.canvas.width / 2;
+    let centerY = this.canvasContext.canvas.height / 2;
+    this.heroTopLeftX = centerX - (size / 2);
+    this.heroTopLeftY = centerY - (size / 2);
     let heroColor = Color.fromHexValue("#0200FF");
     let heroShape = new Circle(this.canvasContext);
-    this.hero = new ShapeUnit(heroShape, this.heroTopLeftX, this.heroTopLeftY, size, heroColor);
+    this.hero = new ShapeUnit(heroShape, centerX, centerY, size, heroColor);
 
     let page = BallVsWildPage;
     this.enemyGenerators.push(new EnemyProducer(10, Math.max(20, this.canvasContext.canvas.width * 0.15), 100, 5000, this.hero,
