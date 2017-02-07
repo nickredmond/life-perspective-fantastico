@@ -279,9 +279,10 @@ export class BallVsWildPage {
       }
     }
     else {
+      let size = Math.max(15, this.canvasContext.canvas.width * 0.06);
       for (var i = 0; i < 4; i++){
         let enemyMini = new Enemy(5, this.spritesImg ,page.MINI_BEE["leftDimensions"], page.MINI_BEE["rightDimensions"],
-          enemy.positionX, enemy.positionY, 15, page.MINI_BEE["name"]);
+          enemy.positionX, enemy.positionY, size, page.MINI_BEE["name"]);
         enemyMini.velocityX = (2 * Math.random() * page.MIN_SHOT_VELOCITY) - page.MIN_SHOT_VELOCITY;
         enemyMini.velocityY = (2 * Math.random() * page.MIN_SHOT_VELOCITY) - page.MIN_SHOT_VELOCITY;
         this.enemies.push(<Enemy>enemyMini);
