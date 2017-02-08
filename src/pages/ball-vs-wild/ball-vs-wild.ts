@@ -3,10 +3,10 @@ import { Storage } from "@ionic/storage";
 import { ShapeUnit, ImageUnit, Enemy } from "../../models/unit";
 import { Color } from "../../models/color";
 import { Shape, Circle } from "../../models/shapes";
-import { HealthBar, RadialShotBar } from "../../models/statusbars";
+import { PowerupBar, HealthBar, RadialShotBar, ShieldBar, PowerupSelector } from "../../models/statusbars";
 import { EnemyProducer, ItemProducer } from "../../models/enemy.producer";
 import { ExtendedMath } from  "../../models/extendedmath";
-import { Dimensions } from "../../models/dimensions";
+import { Dimensions, SpriteDimensions } from "../../models/dimensions";
 
 @Component({
   selector: 'ball-vs-wild',
@@ -40,7 +40,7 @@ export class BallVsWildPage {
   };
   static readonly HEALTH_ITEM = {
     srcDimensions: new Dimensions(600, 0, 150, 150)
-  }
+  };
 
   maxVelocityX: number = 0;
   maxVelocityY: number = 0;
@@ -52,7 +52,7 @@ export class BallVsWildPage {
   highScore: number = 0;
   hero: ShapeUnit = null;
   healthBar: HealthBar = null;
-  powerupBar: RadialShotBar = null;
+  powerupSelector: PowerupSelector = null;
   projectiles: ShapeUnit[] = [];
   items: ImageUnit[] = [];
   enemies: Enemy[] = [];
@@ -242,8 +242,8 @@ export class BallVsWildPage {
         }
       }
     }
-    this.powerupBar.update(dtMilliseconds);
-    this.powerupBar.draw(this.canvasContext);
+    this.powerupSelector.updatePowerupbars(dtMilliseconds);
+    this.powerupSelector.draw();
 
     if (this.hero){
       this.hero.draw(this.canvasContext);
@@ -291,7 +291,7 @@ export class BallVsWildPage {
   }
   private strikeEnemy(enemy: Enemy, projectile: ShapeUnit) {
     this.score += enemy.value;
-    this.powerupBar.addPoints(enemy.value);
+    this.powerupSelector.powerupBars[this.powerupSelector.selectedIndex].addPoints(enemy.value);
     enemy.isAlive = false;
     projectile.isAlive = false;
   }
@@ -317,7 +317,7 @@ export class BallVsWildPage {
   onTouchEnd(event) {
     if (this.healthBar.healthPoints === 0){
       this.healthBar.healthPoints = HealthBar.DEFAULT_MAX_HP;
-      this.powerupBar.clearBar();
+      this.powerupSelector.clearBars();
       this.projectiles = [];
       this.items = [];
       this.enemies = [];
@@ -337,11 +337,22 @@ export class BallVsWildPage {
     }
   }
   onDoubleTap(event) {
-    if (this.powerupBar.isPowerupEnabled()) {
-      this.powerupBar.expend();
+    let selectedPowerup = this.powerupSelector.powerupBars[this.powerupSelector.selectedIndex];
+    if (selectedPowerup.isPowerupEnabled()) {
+      selectedPowerup.expend();
     }
   }
-  onSingleTap(event) {}
+  onSingleTap(event) {
+    let centerX = event.center.x;
+    let centerY = event.center.y;
+    let self = this;
+    this.powerupSelector.dimensions.forEach(function(dimension, index){
+      if (dimension.dx < centerX && centerX < dimension.dx + dimension.dWidth &&
+          dimension.dy < centerY && centerY < dimension.dy + dimension.dHeight) {
+        self.powerupSelector.selectedIndex = index;
+      }
+    });
+  }
 
   ionViewDidEnter() {
   	let canvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
@@ -356,7 +367,18 @@ export class BallVsWildPage {
     let powerupHeight = 15;
     let margin = 0.1 * window.innerWidth;
     let yPosition = window.innerHeight - powerupHeight - 15;
-    this.powerupBar = new RadialShotBar(this, powerupWidth, powerupHeight, 150, margin, yPosition, "DOUBLE-TAP");
+    let powerups = [
+      new RadialShotBar(this, powerupWidth, powerupHeight, 150, margin, yPosition, "DOUBLE-TAP"),
+      new ShieldBar(this, powerupWidth, powerupHeight, 150, margin, yPosition, "DOUBLE-TAP")
+    ];
+    let view = this.canvasContext.canvas;
+    let buttonSize = Math.max(40, view.width * 0.16);
+    let dimensions = [
+      new SpriteDimensions(150, 300, 150, 150, view.width - buttonSize - 10, 10 + 10 + 60 + buttonSize /*view.height - 10 - (2 * buttonSize)*/, buttonSize, buttonSize),
+      new SpriteDimensions(0, 300, 150, 150, view.width - buttonSize - 10, 10 + 60 /*view.height - buttonSize - 5*/, buttonSize, buttonSize)
+    ];
+    this.powerupSelector = new PowerupSelector(powerups, dimensions, this.spritesImg, this.canvasContext);
+    this.powerupSelector.selectedIndex = 0;
 
     let size = this.canvasContext.canvas.width * 0.13;
     let centerX = this.canvasContext.canvas.width / 2;

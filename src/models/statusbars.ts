@@ -1,12 +1,20 @@
 import { ExtendedMath } from "./extendedmath";
 import { ShapeUnit } from "./unit";
 import { BallVsWildPage } from "../pages/ball-vs-wild/ball-vs-wild";
+import { SpriteDimensions } from "./dimensions";
 
 export class HealthBar {
 	static readonly DEFAULT_HP_SIZE: number = 25;
 	static readonly DEFAULT_MAX_HP: number = 3;
 	static readonly HP_PADDING: number = 5;
 	static readonly HP_IMG_SRC: string = "img/health-point-heart.ico";
+	static readonly SHIELD_IMG_SRC: string = "img/sprites.png";
+	static readonly SHIELD_IMG_DIMENSIONS: Object = {
+		"dx": 300,
+		"dy": 300,
+		"dWidth": 150,
+		"dHeight": 150
+	};
 
 	positionX: number;
 	positionY: number;
@@ -14,6 +22,7 @@ export class HealthBar {
 	maxHealthPoints: number;
 	healthPoints: number;
 	hpImage: HTMLImageElement;
+	shieldImage: HTMLImageElement;
 	private isShielded: boolean = false;
 
 	constructor(positionX: number, positionY: number,
@@ -27,6 +36,8 @@ export class HealthBar {
 
 		this.hpImage = new Image();
 		this.hpImage.src = HealthBar.HP_IMG_SRC;
+		this.shieldImage = new Image();
+		this.shieldImage.src = HealthBar.SHIELD_IMG_SRC;
 	}
 
 	giveHealth(){
@@ -55,7 +66,10 @@ export class HealthBar {
 			ctx.drawImage(this.hpImage, imgX, this.positionY, this.healthPointSize, this.healthPointSize);
 			imgX += this.healthPointSize + HealthBar.HP_PADDING;
 		}
-		// TODO: Draw shield if necessary
+		if (this.isShielded) {
+			let d = HealthBar.SHIELD_IMG_DIMENSIONS;
+			ctx.drawImage(this.shieldImage, d["dx"], d["dy"], d["dWidth"], d["dHeight"], imgX, this.positionY, this.healthPointSize, this.healthPointSize);
+		}
 	}
 }
 
@@ -151,6 +165,61 @@ export class PowerupBar {
 	}
 }
 
+export class PowerupSelector {
+	selectedIndex: number = 999999;
+	powerupBars: PowerupBar[] = [];
+	dimensions: SpriteDimensions[];
+	spritesImage: HTMLImageElement;
+	canvasContext: CanvasRenderingContext2D = null;
+
+	constructor(powerupBars: PowerupBar[], dimensions: SpriteDimensions[], spritesImg: HTMLImageElement, ctx: CanvasRenderingContext2D) {
+		this.powerupBars = powerupBars;
+		this.dimensions = dimensions;
+		this.canvasContext = ctx;
+		this.spritesImage = spritesImg;
+	}
+
+	clearBars() {
+		this.powerupBars.forEach(function(powerupBar){
+			powerupBar.clearBar();
+		});
+	}
+	updatePowerupbars(dtMilliseconds: number) {
+		this.powerupBars.forEach(function(powerupBar){
+			powerupBar.update(dtMilliseconds);
+		});
+	}
+	draw() {
+		this.powerupBars[this.selectedIndex].draw(this.canvasContext);
+		let self = this;
+		this.dimensions.forEach(function(dimension, index){
+			let ctx = self.canvasContext;
+			let d = dimension;
+			ctx.drawImage(self.spritesImage,
+				d.sx, d.sy, d.sWidth, d.sHeight,
+				d.dx, d.dy, d.dWidth, d.dHeight
+			);
+			if (index === self.selectedIndex) {
+				let thickness = 2;
+				if (ctx.fillStyle != "white") {
+					ctx.fillStyle = "white";
+				}
+				ctx.fillRect(d.dx, d.dy, Math.max(5, ctx.canvas.width * 0.03), thickness);
+				ctx.fillRect(d.dx, d.dy, thickness, Math.max(5, ctx.canvas.width * 0.03));
+
+				ctx.fillRect(d.dx + d.dWidth - Math.max(5, ctx.canvas.width * 0.03), d.dy, Math.max(5, ctx.canvas.width * 0.03), thickness);
+				ctx.fillRect(d.dx + d.dWidth, d.dy, thickness, Math.max(5, ctx.canvas.width * 0.03));
+
+				ctx.fillRect(d.dx + d.dWidth - Math.max(5, ctx.canvas.width * 0.03), d.dy + d.dHeight, Math.max(5, ctx.canvas.width * 0.03), thickness);
+				ctx.fillRect(d.dx + d.dWidth, d.dy + d.dHeight - Math.max(5, ctx.canvas.width * 0.03), thickness, Math.max(5, ctx.canvas.width * 0.03) + thickness);
+
+				ctx.fillRect(d.dx, d.dy + d.dHeight, Math.max(5, ctx.canvas.width * 0.03), thickness);
+				ctx.fillRect(d.dx, d.dy + d.dHeight - Math.max(5, ctx.canvas.width * 0.03), thickness, Math.max(5, ctx.canvas.width * 0.03));
+			}
+		});
+	}
+}
+
 export class ShieldBar extends PowerupBar {
 	constructor(page: BallVsWildPage, width: number, height: number, maxPoints: number,
 			x: number = 0, y: number = 0, barFilledPhrase: string = "READY",
@@ -187,11 +256,12 @@ export class RadialShotBar extends PowerupBar {
 	private executeRadialShot() {
 		let startingDegrees = Math.random() * 360;
 		let startingRadians = ExtendedMath.toRadians(startingDegrees);
+		let size = Math.max(10, this.page.canvasContext.canvas.width * 0.04);
+
 		for (var i = 0; i < 8; i++) {
 			let radians = startingRadians + (BallVsWildPage.RADIANS_PER_PROJECTILE * i);
 			let xVelocityRatio = Math.cos(radians);
 			let yVelocityRatio = Math.sin(radians);
-			let size = Math.max(10, this.page.canvasContext.canvas.width * 0.04);
 			let nextProjectile = new ShapeUnit(this.page.projectileShape, this.page.hero.positionX,
 			  this.page.hero.positionY, size, BallVsWildPage.PROJECTILE_COLOR);
 			nextProjectile.velocityX = xVelocityRatio * BallVsWildPage.MIN_SHOT_VELOCITY;
