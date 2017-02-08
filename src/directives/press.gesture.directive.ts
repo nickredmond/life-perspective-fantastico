@@ -17,6 +17,8 @@ export abstract class PressDirective implements OnInit, OnDestroy {
   @Output()
   panEvent: EventEmitter<any> = new EventEmitter();
   @Output()
+  tapEvent: EventEmitter<any> = new EventEmitter();
+  @Output()
   doubleTapEvent: EventEmitter<any> = new EventEmitter();
 
   constructor(el: ElementRef) {
@@ -34,6 +36,9 @@ export abstract class PressDirective implements OnInit, OnDestroy {
     });
     this.directiveGesture.on('press', e => {
       this.longPressEvent.emit(e);
+    });
+    this.directiveGesture.on('tap', e => {
+      this.tapEvent.emit(e);
     });
 
     this.doubleTapGesture = new Gesture(this.el, {

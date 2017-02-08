@@ -16,12 +16,11 @@ export abstract class Unit {
 		this.size = size;
 	}
 
-	public intersects(otherUnit: Unit, isEnemy = false): boolean {
+	public intersects(otherUnit: Unit): boolean {
 		let x_diff_squared = Math.pow(otherUnit.positionX - this.positionX, 2);
 		let y_diff_squared = Math.pow(otherUnit.positionY - this.positionY, 2);
 		let distance = Math.sqrt(x_diff_squared + y_diff_squared);
-		let size = isEnemy ? (this.size * 0.8) : this.size;
-		return distance < (size + otherUnit.size);
+		return distance < (otherUnit.radius() + this.radius());
 	}
 
 	radius(): number {
@@ -48,7 +47,7 @@ export class ShapeUnit extends Unit {
 	}
 
 	public draw(ctx: CanvasRenderingContext2D) {
-    	this.shape.draw(this.color, this.positionX + this.radius(), this.positionY + this.radius(), this.size);
+    	this.shape.draw(this.color, this.positionX, this.positionY, this.radius());
 	}
 }
 
@@ -65,7 +64,7 @@ export class ImageUnit extends Unit {
 
 	public draw(ctx: CanvasRenderingContext2D) {
     	ctx.drawImage(this.sourceImg, this.srcDimensions.x, this.srcDimensions.y, this.srcDimensions.width,
-    		this.srcDimensions.height, this.positionX, this.positionY, this.size, this.size);
+    		this.srcDimensions.height, this.positionX - this.radius(), this.positionY - this.radius(), this.size, this.size);
 	}
 }
 
