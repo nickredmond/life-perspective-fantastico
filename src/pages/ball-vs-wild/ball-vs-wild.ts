@@ -519,15 +519,5 @@ registerAdEvents() {
 
     this.initAds();
     admob.requestInterstitialAd();
-
-// document.addEventListener("deviceready", onDeviceReady, false);
   }
 }
-
-// //
-// //
-/////
-// TODO: improved collision ***
-// TODO: only change ctx props if necessary ***
-//       i.e. ctx.color = 'white' if not white, already
-// TODO: health-plus and extrahealth-plus items
