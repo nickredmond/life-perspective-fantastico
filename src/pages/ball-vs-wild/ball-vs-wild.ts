@@ -121,8 +121,10 @@ export class BallVsWildPage {
               ctx.fillText("You have died.", centerX, centerY - 20);
               ctx.fillText("SCORE: " + self.score, centerX, centerY + 15);
 
-              ctx.font = "18px Courier";
-              ctx.fillText("(Tap to retry)", centerX, centerY + 50);
+              if (self.millisUntilNextAd <= BallVsWildPage.MILLIS_BETWEEN_ADS - 2200) {
+                ctx.font = "18px Courier";
+                ctx.fillText("(Tap to retry)", centerX, centerY + 50);
+              }
             }
 
             self.millisUntilNextAd -= dtMilliseconds;
@@ -240,7 +242,9 @@ export class BallVsWildPage {
             enemyGenerator.totalGameTimeMillis = 0;
           });
           if (this.millisUntilNextAd <= 0){
-            admob.showInterstitialAd();
+            setTimeout(function(){
+              admob.showInterstitialAd();
+            }, 2000);
             this.millisUntilNextAd = BallVsWildPage.MILLIS_BETWEEN_ADS;
           }
           this.isContinueEnabled = !this.isContinueEnabled;
@@ -369,7 +373,7 @@ export class BallVsWildPage {
     }
   }
   onTouchEnd(event) {
-    if (this.healthBar.healthPoints === 0){
+    if (this.healthBar.healthPoints === 0 && this.millisUntilNextAd <= BallVsWildPage.MILLIS_BETWEEN_ADS - 2200){
       this.healthBar.healthPoints = HealthBar.DEFAULT_MAX_HP;
       this.powerupSelector.clearBars();
       this.projectiles = [];
