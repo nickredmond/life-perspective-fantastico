@@ -8,7 +8,7 @@ import { EnemyProducer, ItemProducer } from "../../models/enemy.producer";
 import { ExtendedMath } from  "../../models/extendedmath";
 import { PauseButton } from "../../models/buttons";
 import { Dimensions, SpriteDimensions } from "../../models/dimensions";
-
+declare var admob;
 @Component({
   selector: 'ball-vs-wild',
   templateUrl: 'ball-vs-wild.html'
@@ -44,6 +44,7 @@ export class BallVsWildPage {
   static readonly HEALTH_ITEM = {
     srcDimensions: new Dimensions(600, 0, 150, 150)
   };
+  static readonly MILLIS_BETWEEN_ADS: number = 120000;
 
   pauseButton: PauseButton = null;
 
@@ -68,6 +69,10 @@ export class BallVsWildPage {
   canvasContext: CanvasRenderingContext2D = null;
   projectileShape: Shape = null;
   storage: Storage;
+  isAdsLoaded: boolean = false;
+  isContinueEnabled: boolean = false;
+  isAdDisplaying: boolean = false;
+  millisUntilNextAd: number = 0;
 
   constructor(storage: Storage) {
     this.spritesImg = new Image();
@@ -86,6 +91,7 @@ export class BallVsWildPage {
     this.healthBar = new HealthBar(15, 15);
     let dtMillis = BallVsWildPage.MILLIS_PER_SECOND / BallVsWildPage.FPS;
 
+    let self = this;
     setInterval((
       function(self, dtMilliseconds){
         return function() {
@@ -113,6 +119,8 @@ export class BallVsWildPage {
               ctx.font = "18px Courier";
               ctx.fillText("(Tap to retry)", centerX, centerY + 50);
             }
+
+            self.millisUntilNextAd -= dtMilliseconds;
           }
         };
       })(this, dtMillis), dtMillis);
@@ -217,6 +225,11 @@ export class BallVsWildPage {
       if (this.hero.intersects(enemy)){
         if (this.healthBar.healthPoints === 1){
           this.updateHighScore();
+          if (this.millisUntilNextAd <= 0){
+            admob.showInterstitialAd();
+            this.millisUntilNextAd = BallVsWildPage.MILLIS_BETWEEN_ADS;
+          }
+          this.isContinueEnabled = !this.isContinueEnabled;
         }
         this.healthBar.takeHealth();
         enemy.isAlive = false;
@@ -390,6 +403,74 @@ export class BallVsWildPage {
     return Math.max(40, this.canvasContext.canvas.width * 0.16);
   }
 
+initAds() {
+  if (admob) {
+    var adPublisherIds = {
+      // ios : {
+      //   banner : "ca-app-pub-XXXXXXXXXXXXXXXX/BBBBBBBBBB",
+      //   interstitial : "ca-app-pub-XXXXXXXXXXXXXXXX/IIIIIIIIII"
+      // },
+      android : {
+        banner : "ca-app-pub-3035178355763743~7102114115",
+        interstitial: "ca-app-pub-3035178355763743/"
+      }
+    };
+
+    var admobid = (/(android)/i.test(navigator.userAgent)) ? adPublisherIds.android : null/*adPublisherIds.ios*/;
+
+    admob.setOptions({
+      publisherId:          admobid.banner,
+      interstitialAdId:     admobid.interstitial,
+      autoShowInterstitial: false,
+      isTesting: true
+    });
+
+    this.registerAdEvents();
+
+  } else {
+    alert('AdMobAds plugin not ready');
+  }
+}
+
+onAdLoaded(e) {
+  if (true) {
+    if (e.adType === admob.AD_TYPE.INTERSTITIAL) {
+      this.isAdsLoaded = true;
+      this.isContinueEnabled = true;
+    }
+  }
+}
+
+onAdClosed(e) {
+  if (true) {
+    if (e.adType === admob.AD_TYPE.INTERSTITIAL) {
+      admob.requestInterstitialAd();
+    }
+  }
+}
+
+onPause() {
+  if (true) {
+    admob.destroyBannerView();
+  }
+}
+
+onResume() {
+  if (!true) {
+    setTimeout(admob.createBannerView, 1);
+    setTimeout(admob.requestInterstitialAd, 1);
+  }
+}
+
+// optional, in case respond to events
+registerAdEvents() {
+  document.addEventListener(admob.events.onAdLoaded, this.onAdLoaded);
+  document.addEventListener(admob.events.onAdClosed, this.onAdClosed);
+
+  document.addEventListener("pause", this.onPause, false);
+  document.addEventListener("resume", this.onResume, false);
+}
+
   ionViewDidEnter() {
   	let canvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
     this.canvasContext = canvas.getContext("2d");
@@ -435,13 +516,8 @@ export class BallVsWildPage {
 
     let pauseButtonLocation = new Dimensions(10, 10 + 60, this.buttonSize(), this.buttonSize());
     this.pauseButton = new PauseButton(this.spritesImg, page.PAUSE_IMG_DIMENSIONS, page.PLAY_IMG_DIMENSIONS, pauseButtonLocation);
+
+    this.initAds();
+    admob.requestInterstitialAd();
   }
 }
-
-// //
-// //
-/////
-// TODO: improved collision ***
-// TODO: only change ctx props if necessary ***
-//       i.e. ctx.color = 'white' if not white, already
-// TODO: health-plus and extrahealth-plus items
