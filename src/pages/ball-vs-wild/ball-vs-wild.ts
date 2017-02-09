@@ -44,6 +44,7 @@ export class BallVsWildPage {
   static readonly HEALTH_ITEM = {
     srcDimensions: new Dimensions(600, 0, 150, 150)
   };
+  static readonly MILLIS_BETWEEN_ADS: number = 120000;
 
   pauseButton: PauseButton = null;
 
@@ -69,7 +70,9 @@ export class BallVsWildPage {
   projectileShape: Shape = null;
   storage: Storage;
   isAdsLoaded: boolean = false;
-  isAdPlayingOnDeath: boolean = false;
+  isContinueEnabled: boolean = false;
+  isAdDisplaying: boolean = false;
+  millisUntilNextAd: number = 0;
 
   constructor(storage: Storage) {
     this.spritesImg = new Image();
@@ -114,10 +117,10 @@ export class BallVsWildPage {
               ctx.fillText("SCORE: " + self.score, centerX, centerY + 15);
 
               ctx.font = "18px Courier";
-              if (!self.isAdPlayingOnDeath) {
-                ctx.fillText("(Tap to retry)", centerX, centerY + 50);
-              }
+              ctx.fillText("(Tap to retry)", centerX, centerY + 50);
             }
+
+            self.millisUntilNextAd -= dtMilliseconds;
           }
         };
       })(this, dtMillis), dtMillis);
@@ -222,10 +225,11 @@ export class BallVsWildPage {
       if (this.hero.intersects(enemy)){
         if (this.healthBar.healthPoints === 1){
           this.updateHighScore();
-          if (this.isAdPlayingOnDeath){
+          if (this.millisUntilNextAd <= 0){
             admob.showInterstitialAd();
+            this.millisUntilNextAd = BallVsWildPage.MILLIS_BETWEEN_ADS;
           }
-          this.isAdPlayingOnDeath = !this.isAdPlayingOnDeath;
+          this.isContinueEnabled = !this.isContinueEnabled;
         }
         this.healthBar.takeHealth();
         enemy.isAlive = false;
@@ -399,10 +403,6 @@ export class BallVsWildPage {
     return Math.max(40, this.canvasContext.canvas.width * 0.16);
   }
 
-  //yoloswaggins
-
-    //let admob = window.admob;
-
 initAds() {
   if (admob) {
     var adPublisherIds = {
@@ -421,7 +421,8 @@ initAds() {
     admob.setOptions({
       publisherId:          admobid.banner,
       interstitialAdId:     admobid.interstitial,
-      autoShowInterstitial: false
+      autoShowInterstitial: false,
+      isTesting: true
     });
 
     this.registerAdEvents();
@@ -435,7 +436,7 @@ onAdLoaded(e) {
   if (true) {
     if (e.adType === admob.AD_TYPE.INTERSTITIAL) {
       this.isAdsLoaded = true;
-      this.isAdPlayingOnDeath = true;
+      this.isContinueEnabled = true;
     }
   }
 }
@@ -443,7 +444,7 @@ onAdLoaded(e) {
 onAdClosed(e) {
   if (true) {
     if (e.adType === admob.AD_TYPE.INTERSTITIAL) {
-      setTimeout(admob.requestInterstitialAd, 1000 * 60 * 2);
+      admob.requestInterstitialAd();
     }
   }
 }
@@ -451,7 +452,6 @@ onAdClosed(e) {
 onPause() {
   if (true) {
     admob.destroyBannerView();
-    //isAppForeground = false;
   }
 }
 
@@ -459,7 +459,6 @@ onResume() {
   if (!true) {
     setTimeout(admob.createBannerView, 1);
     setTimeout(admob.requestInterstitialAd, 1);
-    //isAppForeground = true;
   }
 }
 
