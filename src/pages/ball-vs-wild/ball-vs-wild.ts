@@ -19,8 +19,8 @@ export class BallVsWildPage {
   static readonly MIN_SHOT_VELOCITY: number = 400;
   static readonly PROJECTILE_COLOR: Color = Color.fromHexValue("#FF0000");
   static readonly RADIANS_PER_PROJECTILE: number = ExtendedMath.toRadians(45);
-  static readonly PAUSE_IMG_DIMENSIONS: Dimensions = new Dimensions(450, 300, 150, 150);
-  static readonly PLAY_IMG_DIMENSIONS: Dimensions = new Dimensions(600, 300, 150, 150);
+  static readonly PAUSE_IMG_DIMENSIONS: Dimensions = new Dimensions(600, 300, 150, 150);
+  static readonly PLAY_IMG_DIMENSIONS: Dimensions = new Dimensions(450, 300, 150, 150);
   static readonly LARGE_BEE = {
     leftDimensions: new Dimensions(600, 150, 150, 150),
     rightDimensions: new Dimensions(0, 0, 150, 150),

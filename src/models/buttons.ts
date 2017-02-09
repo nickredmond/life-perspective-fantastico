@@ -24,11 +24,11 @@ export class PauseButton {
 		this.paused = false;
 	}
 	isPaused() {
-		return this.isPaused;
+		return this.paused;
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {
-		let dimensions = this.isPaused ? this.pauseImgDimensions : this.playImgDimensions;
+		let dimensions = this.paused ? this.pauseImgDimensions : this.playImgDimensions;
 		ctx.drawImage(this.spritesImg, dimensions.x, dimensions.y, dimensions.width, dimensions.height,
 			this.location.x, this.location.y, this.location.width, this.location.height);
 	}
