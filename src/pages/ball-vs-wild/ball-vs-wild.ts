@@ -21,7 +21,6 @@ export class BallVsWildPage {
   static readonly RADIANS_PER_PROJECTILE: number = ExtendedMath.toRadians(45);
   static readonly PAUSE_IMG_DIMENSIONS: Dimensions = new Dimensions(450, 300, 150, 150);
   static readonly PLAY_IMG_DIMENSIONS: Dimensions = new Dimensions(600, 300, 150, 150);
-  static readonly PAUSE_BUTTON_LOCATION: Dimensions = new Dimensions();
   static readonly LARGE_BEE = {
     leftDimensions: new Dimensions(600, 150, 150, 150),
     rightDimensions: new Dimensions(0, 0, 150, 150),
@@ -127,6 +126,48 @@ export class BallVsWildPage {
   }
 
   gameTick(dtMilliseconds: number){
+    if (!this.pauseButton.isPaused()) {
+      this.updateFrame(dtMilliseconds);
+    }
+
+    this.powerupSelector.draw();
+    this.pauseButton.draw(this.canvasContext);
+
+    if (this.hero){
+      this.hero.draw(this.canvasContext);
+    }
+    this.healthBar.draw(this.canvasContext);
+
+    let ctx = this.canvasContext;
+    let scoreX = ctx.canvas.width - 15;
+
+    if (ctx.font != "18px Courier") {
+      ctx.font = "18px Courier";
+    }
+    ctx.fillStyle = "#AAA";
+    ctx.textAlign = "right";
+    ctx.fillText("HI SCORE: " + this.highScore, scoreX, 30);
+
+    ctx.font = "30px Courier";
+    ctx.fillStyle = "white";
+    ctx.fillText(this.score.toString(), scoreX, 60);
+
+    if (this.pauseButton.isPaused()) {
+      let ctx = this.canvasContext;
+      if (ctx.fillStyle != "white") {
+        ctx.fillStyle = "white";
+      }
+      if (ctx.font != "36px Courier") {
+        ctx.font = "36px Courier";
+      }
+      if (ctx.textAlign != "center") {
+        ctx.textAlign = "center";
+      }
+      ctx.fillText("P A U S E", ctx.canvas.width / 2, ctx.canvas.height / 2);
+    }
+  }
+
+  private updateFrame(dtMilliseconds: number) {
     for (var i = 0; i < this.enemyGenerators.length; i++){
       let enemy = <Enemy>this.enemyGenerators[i].tick(dtMilliseconds);
       if (enemy != null){
@@ -249,26 +290,6 @@ export class BallVsWildPage {
       }
     }
     this.powerupSelector.updatePowerupbars(dtMilliseconds);
-    this.powerupSelector.draw();
-
-    if (this.hero){
-      this.hero.draw(this.canvasContext);
-    }
-    this.healthBar.draw(this.canvasContext);
-
-    let ctx = this.canvasContext;
-    let scoreX = ctx.canvas.width - 15;
-
-    if (ctx.font != "18px Courier") {
-      ctx.font = "18px Courier";
-    }
-    ctx.fillStyle = "#AAA";
-    ctx.textAlign = "right";
-    ctx.fillText("HI SCORE: " + this.highScore, scoreX, 30);
-
-    ctx.font = "30px Courier";
-    ctx.fillStyle = "white";
-    ctx.fillText(this.score.toString(), scoreX, 60);
   }
 
   private explodeLargeBee(enemy) {
@@ -358,6 +379,15 @@ export class BallVsWildPage {
         self.powerupSelector.selectedIndex = index;
       }
     });
+    let btn = this.pauseButton.location;
+    if (btn.x < centerX && centerX < btn.x + btn.width &&
+        btn.y < centerY && centerY < btn.y + btn.height) {
+      this.pauseButton.togglePause();
+    }
+  }
+
+  private buttonSize() {
+    return Math.max(40, this.canvasContext.canvas.width * 0.16);
   }
 
   ionViewDidEnter() {
@@ -378,10 +408,9 @@ export class BallVsWildPage {
       new ShieldBar(this, powerupWidth, powerupHeight, 150, margin, yPosition, "DOUBLE-TAP")
     ];
     let view = this.canvasContext.canvas;
-    let buttonSize = Math.max(40, view.width * 0.16);
     let dimensions = [
-      new SpriteDimensions(150, 300, 150, 150, view.width - buttonSize - 10, 10 + 10 + 60 + buttonSize /*view.height - 10 - (2 * buttonSize)*/, buttonSize, buttonSize),
-      new SpriteDimensions(0, 300, 150, 150, view.width - buttonSize - 10, 10 + 60 /*view.height - buttonSize - 5*/, buttonSize, buttonSize)
+      new SpriteDimensions(150, 300, 150, 150, view.width - this.buttonSize() - 10, 10 + 10 + 60 + this.buttonSize(), this.buttonSize(), this.buttonSize()),
+      new SpriteDimensions(0, 300, 150, 150, view.width - this.buttonSize() - 10, 10 + 60, this.buttonSize(), this.buttonSize())
     ];
     this.powerupSelector = new PowerupSelector(powerups, dimensions, this.spritesImg, this.canvasContext);
     this.powerupSelector.selectedIndex = 0;
@@ -404,7 +433,8 @@ export class BallVsWildPage {
       this.spritesImg, page.SMALL_BEE["leftDimensions"], page.SMALL_BEE["rightDimensions"], this.canvasContext, page.SMALL_BEE["name"]));
     this.itemGenerators.push(new ItemProducer(this.spritesImg, page.HEALTH_ITEM["srcDimensions"], 30, 250, 10000, this.canvasContext));
 
-    this.pauseButton = new PauseButton(this.spritesImg, page.PAUSE_IMG_DIMENSIONS, page.PLAY_IMG_DIMENSIONS, page.PAUSE_BUTTON_LOCATION);
+    let pauseButtonLocation = new Dimensions(10, 10 + 60, this.buttonSize(), this.buttonSize());
+    this.pauseButton = new PauseButton(this.spritesImg, page.PAUSE_IMG_DIMENSIONS, page.PLAY_IMG_DIMENSIONS, pauseButtonLocation);
   }
 }
 

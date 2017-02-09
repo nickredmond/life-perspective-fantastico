@@ -5,7 +5,7 @@ export class PauseButton {
 	pauseImgDimensions: Dimensions = null;
 	playImgDimensions: Dimensions = null;
 	location: Dimensions = null;
-	private isPaused: boolean = false;
+	private paused: boolean = false;
 
 	constructor(spritesImg: HTMLImageElement, pauseImgDimensions: Dimensions, playImgDimensions: Dimensions, location: Dimensions) {
 		this.spritesImg = spritesImg;
@@ -14,11 +14,17 @@ export class PauseButton {
 		this.location = location;
 	}
 
+	togglePause() {
+		this.paused = !this.paused;
+	}
 	pause() {
-		this.isPaused = true;
+		this.paused = true;
 	}
 	play() {
-		this.isPaused = false;
+		this.paused = false;
+	}
+	isPaused() {
+		return this.isPaused;
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {
