@@ -7,6 +7,7 @@ import { HealthBar, RadialShotBar } from "../../models/statusbars";
 import { EnemyProducer, ItemProducer } from "../../models/enemy.producer";
 import { ExtendedMath } from  "../../models/extendedmath";
 import { Dimensions } from "../../models/dimensions";
+import { PauseButton } from "../../models/buttons";
 
 @Component({
   selector: 'ball-vs-wild',
@@ -18,7 +19,9 @@ export class BallVsWildPage {
   static readonly MIN_SHOT_VELOCITY: number = 400;
   static readonly PROJECTILE_COLOR: Color = Color.fromHexValue("#FF0000");
   static readonly RADIANS_PER_PROJECTILE: number = ExtendedMath.toRadians(45);
-  static readonly PauseButton: ImageUnit = null;
+  static readonly PAUSE_IMG_DIMENSIONS: Dimensions = new Dimensions(450, 300, 150, 150);
+  static readonly PLAY_IMG_DIMENSIONS: Dimensions = new Dimensions(600, 300, 150, 150);
+  static readonly PAUSE_BUTTON_LOCATION: Dimensions = new Dimensions();
   static readonly LARGE_BEE = {
     leftDimensions: new Dimensions(600, 150, 150, 150),
     rightDimensions: new Dimensions(0, 0, 150, 150),
@@ -42,6 +45,8 @@ export class BallVsWildPage {
   static readonly HEALTH_ITEM = {
     srcDimensions: new Dimensions(600, 0, 150, 150)
   }
+
+  pauseButton: PauseButton = null;
 
   maxVelocityX: number = 0;
   maxVelocityY: number = 0;
@@ -371,6 +376,8 @@ export class BallVsWildPage {
     this.enemyGenerators.push(new EnemyProducer(25, Math.max(10, this.canvasContext.canvas.width * 0.09), 175, 8000, this.hero,
       this.spritesImg, page.SMALL_BEE["leftDimensions"], page.SMALL_BEE["rightDimensions"], this.canvasContext, page.SMALL_BEE["name"]));
     this.itemGenerators.push(new ItemProducer(this.spritesImg, page.HEALTH_ITEM["srcDimensions"], 30, 250, 10000, this.canvasContext));
+
+    this.pauseButton = new PauseButton(this.spritesImg, page.PAUSE_IMG_DIMENSIONS, page.PLAY_IMG_DIMENSIONS, page.PAUSE_BUTTON_LOCATION);
   }
 }
 
