@@ -13,9 +13,9 @@ export class Shape {
 }
 
 export class Circle extends Shape {
-	draw(color: Color, x: number, y: number, size: number){
+	draw(color: Color, x: number, y: number, radius: number){
 		this.ctx.beginPath();
-    	this.ctx.arc(x, y, size, 0, 2 * Math.PI);
+    	this.ctx.arc(x, y, radius, 0, 2 * Math.PI);
     	this.ctx.fillStyle = color.toStringRGB();
     	this.ctx.fill();
 	}
