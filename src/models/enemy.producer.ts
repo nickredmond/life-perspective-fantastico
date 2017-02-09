@@ -1,5 +1,6 @@
 import { Enemy, ImageUnit, Unit } from "./unit";
 import { Dimensions } from "./dimensions";
+import { BallVsWildPage } from "../pages/ball-vs-wild/ball-vs-wild";
 
 export class UnitProducer {
 	size: number;
@@ -7,6 +8,7 @@ export class UnitProducer {
 	spawnRateMilliseconds: number;
   millisTilNextSpawn: number = 0;
   canvasContext: CanvasRenderingContext2D;
+  totalGameTimeMillis: number = 0;
 
   constructor(size: number, velocity: number, spawnRateMillis: number, ctx: CanvasRenderingContext2D){
     this.size = size;
@@ -19,19 +21,20 @@ export class UnitProducer {
 
   public tick(dtMilliseconds, generateFunction = null): Unit {
     let unit = null;
-
     if (this.millisTilNextSpawn <= 0){
       unit = generateFunction(this, this.canvasContext);
       this.resetSpawnTimer();
+
     }
     else {
       this.millisTilNextSpawn -= dtMilliseconds;
     }
+    this.totalGameTimeMillis += dtMilliseconds;
 
     return unit;
   }
 
-  private resetSpawnTimer(){
+  resetSpawnTimer(){
     this.millisTilNextSpawn = Math.random() * this.spawnRateMilliseconds;
   }
 }
@@ -93,6 +96,11 @@ export class EnemyProducer extends UnitProducer {
 
     return enemy;
   }
+
+  resetSpawnTimer(){
+    let scale = this.spawnRateMilliseconds - (((this.totalGameTimeMillis / 1000 / 60) / 5) * this.spawnRateMilliseconds);
+    this.millisTilNextSpawn = Math.max(800, scale);
+  }
 }
 
 export class ItemProducer extends UnitProducer {
@@ -148,5 +156,10 @@ export class ItemProducer extends UnitProducer {
     item.velocityY = scale * deltaY;
 
     return item;
+  }
+
+  resetSpawnTimer(){
+    let scale = this.spawnRateMilliseconds + (((this.totalGameTimeMillis / 1000 / 60) / 5) * this.spawnRateMilliseconds);
+    this.millisTilNextSpawn = Math.max(1000, scale);
   }
 }

@@ -8,7 +8,10 @@ import { EnemyProducer, ItemProducer } from "../../models/enemy.producer";
 import { ExtendedMath } from  "../../models/extendedmath";
 import { PauseButton } from "../../models/buttons";
 import { Dimensions, SpriteDimensions } from "../../models/dimensions";
+import { Device } from 'ionic-native';
 declare var admob;
+declare var device;
+
 @Component({
   selector: 'ball-vs-wild',
   templateUrl: 'ball-vs-wild.html'
@@ -73,6 +76,8 @@ export class BallVsWildPage {
   isContinueEnabled: boolean = false;
   isAdDisplaying: boolean = false;
   millisUntilNextAd: number = 0;
+
+  millisSinceLastShot: number = 0;
 
   constructor(storage: Storage) {
     this.spritesImg = new Image();
@@ -176,7 +181,10 @@ export class BallVsWildPage {
   }
 
   private updateFrame(dtMilliseconds: number) {
+    this.millisSinceLastShot += dtMilliseconds;
+
     for (var i = 0; i < this.enemyGenerators.length; i++){
+
       let enemy = <Enemy>this.enemyGenerators[i].tick(dtMilliseconds);
       if (enemy != null){
         this.enemies.push(enemy);
@@ -225,6 +233,12 @@ export class BallVsWildPage {
       if (this.hero.intersects(enemy)){
         if (this.healthBar.healthPoints === 1){
           this.updateHighScore();
+          this.itemGenerators.forEach(function(itemGenerator){
+            itemGenerator.totalGameTimeMillis = 0;
+          });
+          this.enemyGenerators.forEach(function(enemyGenerator){
+            enemyGenerator.totalGameTimeMillis = 0;
+          });
           if (this.millisUntilNextAd <= 0){
             admob.showInterstitialAd();
             this.millisUntilNextAd = BallVsWildPage.MILLIS_BETWEEN_ADS;
@@ -363,7 +377,7 @@ export class BallVsWildPage {
       this.enemies = [];
       this.score = 0;
     }
-    else if (this.maxVelocity > 0) {
+    else if (this.maxVelocity > 0 && this.millisSinceLastShot >= 200) {
       let velocityScale = BallVsWildPage.MIN_SHOT_VELOCITY / Math.abs(this.maxVelocity);
 
       let size = Math.max(10, this.canvasContext.canvas.width * 0.04);
@@ -374,6 +388,7 @@ export class BallVsWildPage {
       this.projectiles.push(nextProjectile);
 
       this.maxVelocity = 0;
+      this.millisSinceLastShot = 0;
     }
   }
   onDoubleTap(event) {
@@ -422,7 +437,7 @@ initAds() {
       publisherId:          admobid.banner,
       interstitialAdId:     admobid.interstitial,
       autoShowInterstitial: false,
-      isTesting: true
+      isTesting: false
     });
 
     this.registerAdEvents();
@@ -512,7 +527,7 @@ registerAdEvents() {
       this.spritesImg, page.LARGE_BEE["leftDimensions"], page.LARGE_BEE["rightDimensions"], this.canvasContext, page.LARGE_BEE["name"]));
     this.enemyGenerators.push(new EnemyProducer(25, Math.max(10, this.canvasContext.canvas.width * 0.09), 175, 8000, this.hero,
       this.spritesImg, page.SMALL_BEE["leftDimensions"], page.SMALL_BEE["rightDimensions"], this.canvasContext, page.SMALL_BEE["name"]));
-    this.itemGenerators.push(new ItemProducer(this.spritesImg, page.HEALTH_ITEM["srcDimensions"], 30, 250, 10000, this.canvasContext));
+    this.itemGenerators.push(new ItemProducer(this.spritesImg, page.HEALTH_ITEM["srcDimensions"], 30, 250, 8000, this.canvasContext));
 
     let pauseButtonLocation = new Dimensions(10, 10 + 60, this.buttonSize(), this.buttonSize());
     this.pauseButton = new PauseButton(this.spritesImg, page.PAUSE_IMG_DIMENSIONS, page.PLAY_IMG_DIMENSIONS, pauseButtonLocation);
