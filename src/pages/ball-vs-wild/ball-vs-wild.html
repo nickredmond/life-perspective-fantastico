@@ -1,17 +1,43 @@
-<!-- <ion-header id="viewHeader">
-  <ion-navbar>
-    <button ion-button menuToggle>
-      <ion-icon name="menu"></ion-icon>
-    </button>
-    <ion-title>Ball vs Wild</ion-title>
-  </ion-navbar>
-</ion-header> -->
 
-<ion-content>
+
+<ion-content style="background-color: black;">
   <canvas anyPress id="mainCanvas"
   	(touchend)="onTouchEnd($event)"
-  	(panEvent)="onDragGesture($event)"
+    (panEvent)="onDragGesture($event)"
     (tapEvent)="onSingleTap($event)"
-  	(doubleTapEvent)="onDoubleTap($event)">
+    (doubleTapEvent)="onDoubleTap($event)">
   </canvas>
+<!--   <ion-header id="viewHeader" id="hs2" *ngIf="!isUserNameSet">
+    <ion-navbar>
+      <ion-title>New High Score!</ion-title>
+    </ion-navbar>
+  </ion-header>
+<div id="hs"
+  style="background-color: black;margin-top: 5em; text-align: center;" 
+  position="bottom" *ngIf="!isUserNameSet">
+    <form 
+      style="background-color: black;" class="message-form">
+      <label class="item item-input">
+        <ion-input id="nameInput" type="text" placeholder="Name..." [(ngModel)]="userName"
+          style="margin-left: auto; margin-right: auto; width: 80%; font: 18px Courier; border: 0.1em solid white; font-weight: bold; color: white" name="userName"></ion-input>
+      </label>
+      <div class="padding">
+        <button 
+          style="color: black; font: 20px Courier; font-weight: bolder; width:80%; margin-left: auto; margin-right: auto; border-radius: 0.2em; padding: 0.5em 1em; margin-top: 0.5em;"
+          (click)="saveScore()"
+          type="button">Save</button>
+        </div>
+        <div class="padding">
+        <button 
+          style="color: black; font: 20px Courier; font-weight: bolder; width:80%; margin-left: auto; margin-right: auto; border-radius: 0.2em; padding: 0.5em 1em; margin-top: 0.5em;"
+          (click)="startNewGame()"
+          type="button">Cancel</button>
+        </div>
+    </form>
+    <div style="text-align: center;">
+      <ion-input  [(ngModel)]="leaderboardScore" type="text" style="font: 22px Courier; color: white; margin-left: auto; margin-right: auto; width: 80%;" readonly></ion-input>
+    </div>
+</div> -->
 </ion-content>
+
+

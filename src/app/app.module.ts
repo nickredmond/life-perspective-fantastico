@@ -6,6 +6,7 @@ import { ItemDetailsPage } from '../pages/item-details/item-details';
 import { ListPage } from '../pages/list/list';
 import { PressDirective } from '../directives/press.gesture.directive.ts';
 import { Storage } from '@ionic/storage';
+// import {HTTP_PROVIDERS} from 'angular2/http';
 
 @NgModule({
   declarations: [
@@ -27,7 +28,8 @@ import { Storage } from '@ionic/storage';
   ],
   providers: [
     {provide: ErrorHandler, useClass: IonicErrorHandler},
-    Storage
+    Storage,
+    // HTTP_PROVIDERS
   ]
 })
 export class AppModule {}

@@ -12,6 +12,11 @@ import { Device } from 'ionic-native';
 declare var admob;
 declare var device;
 
+// import {Http} from 'angular2/http';
+// import 'rxjs/Rx';
+import {Http} from '@angular/http';
+import 'rxjs/add/operator/map';
+
 @Component({
   selector: 'ball-vs-wild',
   templateUrl: 'ball-vs-wild.html'
@@ -79,7 +84,33 @@ export class BallVsWildPage {
 
   millisSinceLastShot: number = 0;
 
-  constructor(storage: Storage) {
+  highScores: Object[] = [];
+   isHighScoresDisplayed: boolean = false;
+  // isHighScoreAchieved: boolean = false;
+  // leaderboardScore: string = "";
+  // placeTaken: number = -1;
+  userName: string = "";
+  http: Http;
+  // isUserNameSet: boolean = false;
+  isScoresSorted: boolean = false;
+
+  constructor(storage: Storage, http: Http) {
+    this.http = http;
+    http.get('https://api.myjson.com/bins/6f8ed').map(res => res.json()).subscribe(
+      (data) => {
+        if (!(data && data.length > 0)) {
+          for (var i = 0; i < 5; i++) {
+            let plyr = "player" + (i + 1);
+            this.highScores.push({"name": plyr, "score": 1000 - (200 * i)});
+          }
+          http.put('https://api.myjson.com/bins/6f8ed', this.highScores).map(res => res.json()).subscribe(
+            (data) => {});
+        } else {
+          this.highScores = data;
+        }
+      }
+    );
+
     this.spritesImg = new Image();
     this.spritesImg.src = "img/sprites.png";
 
@@ -90,6 +121,12 @@ export class BallVsWildPage {
       }
       else {
         this.highScore = val;
+      }
+    });
+    this.storage.get("userName").then((val) => {
+      let user = (val && val.length > 0) ? val : ("User-" + this.makeid(7));
+      if (!(val && val.length > 0)){
+        this.storage.set("userName", user);
       }
     });
 
@@ -110,7 +147,47 @@ export class BallVsWildPage {
             if (self.healthBar.healthPoints > 0){
               self.gameTick(dtMilliseconds);
             }
-            else {
+            else if (self.isHighScoresDisplayed) {
+              if (!self.isScoresSorted) {
+                self.highScores = this.highScores.sort(function(a, b){
+                  let result = 0;
+                  if (a["score"] > b["score"]){
+                    let result = 1;
+                  } else if (a["score"] < b["score"]) {
+                    let result = -1;
+                  }
+                  return result;
+                });
+                self.isScoresSorted = true;
+              }
+              let centerX = ctx.canvas.width / 2;
+              let topY = ctx.canvas.height * 0.1;
+
+              if (ctx.font != "30px Courier" || ctx.textAlign != "center") {
+                ctx.font = "30px Courier";
+                ctx.textAlign = "center";
+              }
+              ctx.fillText("HIGH SCORES", centerX, topY - 20);
+              ctx.fillRect(ctx.canvas.width * 0.1, topY, ctx.canvas.width * 0.8, 3);
+
+              ctx.font = "18px Courier";
+              ctx.fillText("(Tap to retry)", centerX, topY + 50 + (self.highScores.length * 25));
+
+              ctx.textAlign = "left";
+              let leftMargin = ctx.canvas.width * 0.1;
+
+              for (var i = 0; i < self.highScores.length; i++) {
+                ctx.fillText(self.highScores[i]["name"], leftMargin, topY + 25 + (25 * i));
+              }
+
+              ctx.textAlign = "right";
+              let rightMargin = ctx.canvas.width * 0.9;
+
+              for (var i = 0; i < self.highScores.length; i++) {
+                ctx.fillText(self.highScores[i]["score"], rightMargin, topY + 25 + (25 * i));
+              }
+            }
+            else{
               let centerX = ctx.canvas.width / 2;
               let centerY = ctx.canvas.height / 2;
 
@@ -123,7 +200,7 @@ export class BallVsWildPage {
 
               if (self.millisUntilNextAd <= BallVsWildPage.MILLIS_BETWEEN_ADS - 2200) {
                 ctx.font = "18px Courier";
-                ctx.fillText("(Tap to retry)", centerX, centerY + 50);
+                ctx.fillText("(Tap to continue)", centerX, centerY + 50);
               }
             }
 
@@ -131,6 +208,14 @@ export class BallVsWildPage {
           }
         };
       })(this, dtMillis), dtMillis);
+  }
+
+  setUserName(){
+    alert("mother fukcer");
+    this.userName = document.getElementById("userName").innerHTML;
+    document.getElementById("userNameForm").style.display = "none";
+    document.getElementById("mainCanvas").style.display = "block";
+    this.initApp();
   }
 
   updateHighScore(){
@@ -248,6 +333,8 @@ export class BallVsWildPage {
             this.millisUntilNextAd = BallVsWildPage.MILLIS_BETWEEN_ADS;
           }
           this.isContinueEnabled = !this.isContinueEnabled;
+
+          this.checkHighScore();
         }
         this.healthBar.takeHealth();
         enemy.isAlive = false;
@@ -323,6 +410,68 @@ export class BallVsWildPage {
     this.powerupSelector.updatePowerupbars(dtMilliseconds);
   }
 
+  checkHighScore() {
+    let sortedScores = this.highScores.sort(function(a, b){
+      let result = 0;
+      if (a["score"] > b["score"]){
+        let result = 1;
+      } else if (a["score"] < b["score"]) {
+        let result = -1;
+      }
+      return result;
+    });
+    let place = -1;
+    for (var i = 0; i < sortedScores.length; i++){
+      if (this.score > sortedScores[i]["score"] && place <= 0) {
+        place = i + 1;
+      }
+    }
+    if (place > 0) {
+      this.storage.get("userName").then((val) => {
+          this.highScores.pop();
+          this.highScores.push({name: val, score: this.score});
+          let sortedScores = this.highScores.sort(function(a, b){
+      let result = 0;
+      if (a["score"] > b["score"]){
+        let result = 1;
+      } else if (a["score"] < b["score"]) {
+        let result = -1;
+      }
+      return result;
+    });
+          this.highScores = sortedScores;
+          this.http.put('https://api.myjson.com/bins/6f8ed', this.highScores).map(res => res.json()).subscribe(
+            (data) => {});
+      });
+      // this.isHighScoreAchieved = true;
+      // this.leaderboardScore = "SCORE: " + this.score + " (" + this.place(place) + ")";
+      // this.placeTaken = place;
+    }
+  }
+  private place(value) {
+    let p = "None";
+    switch (value) {
+      case 1:
+        p = "1st";
+        break;
+      case 2:
+        p = "2nd";
+        break;
+      case 3:
+        p = "3rd";
+        break;
+      case 4:
+        p = "4th";
+        break;
+      case 5:
+        p = "5th";
+        break;
+      default:
+        break;
+    }
+    return p;
+  }
+
   private explodeLargeBee(enemy) {
     let page = BallVsWildPage;
     let chance = Math.random();
@@ -373,13 +522,16 @@ export class BallVsWildPage {
     }
   }
   onTouchEnd(event) {
-    if (this.healthBar.healthPoints === 0 && this.millisUntilNextAd <= BallVsWildPage.MILLIS_BETWEEN_ADS - 2200){
+    if (this.isHighScoresDisplayed){
       this.healthBar.healthPoints = HealthBar.DEFAULT_MAX_HP;
       this.powerupSelector.clearBars();
       this.projectiles = [];
       this.items = [];
       this.enemies = [];
       this.score = 0;
+      this.isHighScoresDisplayed = false;
+    } else if (this.healthBar.healthPoints === 0 && this.millisUntilNextAd <= BallVsWildPage.MILLIS_BETWEEN_ADS - 2200) {
+      this.isHighScoresDisplayed = true;
     }
     else if (this.maxVelocity > 0 && this.millisSinceLastShot >= 200) {
       let velocityScale = BallVsWildPage.MIN_SHOT_VELOCITY / Math.abs(this.maxVelocity);
@@ -422,6 +574,32 @@ export class BallVsWildPage {
     return Math.max(40, this.canvasContext.canvas.width * 0.16);
   }
 
+  saveScore() {
+    this.storage.set("userName", this.userName);
+
+    // this.isHighScoreAchieved = false;
+    // let scoreName = this.userName;
+
+    // this.storage.get("userName").then((val) => {
+    //   if (val === null){
+    //     this.storage.set("userName", scoreName);
+    //   } else {
+    //     scoreName = (scoreName && scoreName.length > 0) ? scoreName : val;
+    //   }
+    // });
+
+    // this.highScores.pop();
+    //   if (this.placeTaken < this.highScores.length){
+    //     this.highScores[this.placeTaken - 1] = this.score;
+    //   } else {
+    //     this.highScores.push({name: scoreName, score: this.score});
+    //   }
+    // this.http.put('https://api.myjson.com/bins/6f8ed', this.highScores).map(res => res.json()).subscribe(
+    //         (data) => {});
+    // this.isHighScoreAchieved = false;
+    // this.isHighScoresDisplayed = true;
+  }
+
 initAds() {
   if (admob) {
     var adPublisherIds = {
@@ -441,7 +619,7 @@ initAds() {
       publisherId:          admobid.banner,
       interstitialAdId:     admobid.interstitial,
       autoShowInterstitial: false,
-      isTesting: false
+      isTesting: true
     });
 
     this.registerAdEvents();
@@ -490,8 +668,25 @@ registerAdEvents() {
   document.addEventListener("resume", this.onResume, false);
 }
 
+initApp() {
+  
+}
+
+makeid(length): string
+{
+    let text = "";
+    let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    for( var i=0; i < length; i++ ){
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+
+    return text;
+}
+
   ionViewDidEnter() {
-  	let canvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
+
+    let canvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
     this.canvasContext = canvas.getContext("2d");
     this.projectileShape = new Circle(this.canvasContext);
 
@@ -538,5 +733,7 @@ registerAdEvents() {
 
     this.initAds();
     admob.requestInterstitialAd();
+
+    // document.getElementById("highScoreLabel").innerHTML = 
   }
 }
