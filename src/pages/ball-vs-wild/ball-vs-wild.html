@@ -1,5 +1,4 @@
 
-
 <ion-content style="background-color: black;">
   <canvas anyPress id="mainCanvas"
   	(touchend)="onTouchEnd($event)"
@@ -7,6 +6,12 @@
     (tapEvent)="onSingleTap($event)"
     (doubleTapEvent)="onDoubleTap($event)">
   </canvas>
+  <div id="usernameField" style="z-index: 1000; position: absolute; display: none; color: white
+    font: 18px Courier; padding: 0.25em; border: 0.1em solid white;">
+    <input id="userName" placeholder="Enter name . . ." />
+    <button ion-button type="button" (click)="setUsername()">Save</button>
+  </div>
+  <!-- <div class="g-signin2" data-onsuccess="onSignIn"></div> -->
 <!--   <ion-header id="viewHeader" id="hs2" *ngIf="!isUserNameSet">
     <ion-navbar>
       <ion-title>New High Score!</ion-title>

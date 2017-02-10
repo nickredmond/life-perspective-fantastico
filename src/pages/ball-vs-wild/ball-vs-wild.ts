@@ -9,8 +9,13 @@ import { ExtendedMath } from  "../../models/extendedmath";
 import { PauseButton } from "../../models/buttons";
 import { Dimensions, SpriteDimensions } from "../../models/dimensions";
 import { Device } from 'ionic-native';
+import { AngularFire, AuthProviders, FirebaseAuthState } from 'angularfire2';
+import {GooglePlus} from 'ionic-native';
+import {AuthMethods} from "angularfire2";
+ import firebase from 'firebase';
 declare var admob;
 declare var device;
+
 
 // import {Http} from 'angular2/http';
 // import 'rxjs/Rx';
@@ -93,8 +98,10 @@ export class BallVsWildPage {
   http: Http;
   // isUserNameSet: boolean = false;
   isScoresSorted: boolean = false;
+  isHighScore: boolean = false;
 
-  constructor(storage: Storage, http: Http) {
+  constructor(storage: Storage, http: Http, public af: AngularFire) {
+    let page = this;
     this.http = http;
     http.get('https://api.myjson.com/bins/6f8ed').map(res => res.json()).subscribe(
       (data) => {
@@ -123,12 +130,6 @@ export class BallVsWildPage {
         this.highScore = val;
       }
     });
-    this.storage.get("userName").then((val) => {
-      let user = (val && val.length > 0) ? val : ("User-" + this.makeid(7));
-      if (!(val && val.length > 0)){
-        this.storage.set("userName", user);
-      }
-    });
 
     this.healthBar = new HealthBar(15, 15);
     let dtMillis = BallVsWildPage.MILLIS_PER_SECOND / BallVsWildPage.FPS;
@@ -148,43 +149,50 @@ export class BallVsWildPage {
               self.gameTick(dtMilliseconds);
             }
             else if (self.isHighScoresDisplayed) {
-              if (!self.isScoresSorted) {
-                self.highScores = this.highScores.sort(function(a, b){
-                  let result = 0;
-                  if (a["score"] > b["score"]){
-                    let result = 1;
-                  } else if (a["score"] < b["score"]) {
-                    let result = -1;
-                  }
-                  return result;
-                });
-                self.isScoresSorted = true;
+              if (self.userName || !self.isHighScore){
+                document.getElementById("usernameField").style.display = "none";
+
+                if (!self.isScoresSorted) {
+                  self.highScores = self.highScores.sort(function(a, b){
+                    let result = 0;
+                    if (a["score"] > b["score"]){
+                      let result = 1;
+                    } else if (a["score"] < b["score"]) {
+                      let result = -1;
+                    }
+                    return result;
+                  });
+                  self.isScoresSorted = true;
+                }
+                let centerX = ctx.canvas.width / 2;
+                let topY = ctx.canvas.height * 0.1;
+
+                if (ctx.font != "30px Courier" || ctx.textAlign != "center") {
+                  ctx.font = "30px Courier";
+                  ctx.textAlign = "center";
+                }
+                ctx.fillText("HIGH SCORES", centerX, topY - 20);
+                ctx.fillRect(ctx.canvas.width * 0.1, topY, ctx.canvas.width * 0.8, 3);
+
+                ctx.font = "18px Courier";
+                ctx.fillText("(Tap to retry)", centerX, topY + 50 + (self.highScores.length * 25));
+
+                ctx.textAlign = "left";
+                let leftMargin = ctx.canvas.width * 0.1;
+
+                for (var i = 0; i < self.highScores.length; i++) {
+                  ctx.fillText(self.highScores[i]["name"], leftMargin, topY + 25 + (25 * i));
+                }
+
+                ctx.textAlign = "right";
+                let rightMargin = ctx.canvas.width * 0.9;
+
+                for (var i = 0; i < self.highScores.length; i++) {
+                  ctx.fillText(self.highScores[i]["score"], rightMargin, topY + 25 + (25 * i));
+                }
               }
-              let centerX = ctx.canvas.width / 2;
-              let topY = ctx.canvas.height * 0.1;
-
-              if (ctx.font != "30px Courier" || ctx.textAlign != "center") {
-                ctx.font = "30px Courier";
-                ctx.textAlign = "center";
-              }
-              ctx.fillText("HIGH SCORES", centerX, topY - 20);
-              ctx.fillRect(ctx.canvas.width * 0.1, topY, ctx.canvas.width * 0.8, 3);
-
-              ctx.font = "18px Courier";
-              ctx.fillText("(Tap to retry)", centerX, topY + 50 + (self.highScores.length * 25));
-
-              ctx.textAlign = "left";
-              let leftMargin = ctx.canvas.width * 0.1;
-
-              for (var i = 0; i < self.highScores.length; i++) {
-                ctx.fillText(self.highScores[i]["name"], leftMargin, topY + 25 + (25 * i));
-              }
-
-              ctx.textAlign = "right";
-              let rightMargin = ctx.canvas.width * 0.9;
-
-              for (var i = 0; i < self.highScores.length; i++) {
-                ctx.fillText(self.highScores[i]["score"], rightMargin, topY + 25 + (25 * i));
+              else {
+                document.getElementById("usernameField").style.display = "block";
               }
             }
             else{
@@ -210,12 +218,26 @@ export class BallVsWildPage {
       })(this, dtMillis), dtMillis);
   }
 
-  setUserName(){
-    alert("mother fukcer");
+  setUsername(){
+    console.log("mother fukcer");
     this.userName = document.getElementById("userName").innerHTML;
-    document.getElementById("userNameForm").style.display = "none";
-    document.getElementById("mainCanvas").style.display = "block";
-    this.initApp();
+    this.storage.set("userName", this.userName);
+    this.isHighScore = false;
+
+    let sortedScores = this.highScores.sort(function(a, b){
+        let result = 0;
+        if (a["score"] > b["score"]){
+          let result = 1;
+        } else if (a["score"] < b["score"]) {
+          let result = -1;
+        }
+        return result;
+      });
+      this.highScores = sortedScores;
+     this.highScores.splice(0, 1);
+      this.highScores.push({name: this.userName, score: this.score});
+      this.http.put('https://api.myjson.com/bins/6f8ed', this.highScores).map(res => res.json()).subscribe(
+        (data) => {});
   }
 
   updateHighScore(){
@@ -333,7 +355,6 @@ export class BallVsWildPage {
             this.millisUntilNextAd = BallVsWildPage.MILLIS_BETWEEN_ADS;
           }
           this.isContinueEnabled = !this.isContinueEnabled;
-
           this.checkHighScore();
         }
         this.healthBar.takeHealth();
@@ -427,22 +448,8 @@ export class BallVsWildPage {
       }
     }
     if (place > 0) {
-      this.storage.get("userName").then((val) => {
-          this.highScores.pop();
-          this.highScores.push({name: val, score: this.score});
-          let sortedScores = this.highScores.sort(function(a, b){
-      let result = 0;
-      if (a["score"] > b["score"]){
-        let result = 1;
-      } else if (a["score"] < b["score"]) {
-        let result = -1;
-      }
-      return result;
-    });
-          this.highScores = sortedScores;
-          this.http.put('https://api.myjson.com/bins/6f8ed', this.highScores).map(res => res.json()).subscribe(
-            (data) => {});
-      });
+      this.isHighScore = true;
+         
       // this.isHighScoreAchieved = true;
       // this.leaderboardScore = "SCORE: " + this.score + " (" + this.place(place) + ")";
       // this.placeTaken = place;

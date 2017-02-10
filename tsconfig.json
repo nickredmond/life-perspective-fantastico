@@ -16,6 +16,13 @@
   "include": [
     "src/**/*.ts"
   ],
+  "typeRoots": [
+      "../node_modules/@types"
+    ],
+  "types": [
+      "firebase",
+      "node"
+    ],
   "exclude": [
     "node_modules"
   ],
