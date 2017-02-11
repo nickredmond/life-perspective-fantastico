@@ -50,6 +50,8 @@ export class BallVsWildPage {
   };
   static readonly MILLIS_BETWEEN_ADS: number = 120000;
 
+  static readonly WAVELENGTH_MILLIS: number = 10000;
+
   pauseButton: PauseButton = null;
 
   maxVelocityX: number = 0;
@@ -90,6 +92,9 @@ export class BallVsWildPage {
   valueFlag: boolean = false;
   isUsernameSetIgnored: boolean = false;
   isButtonPress: boolean = true;
+
+  isEnemiesGoingBallistic: boolean = false;
+  millisUntilDoom: number = 0;
 
   constructor(storage: Storage, http: Http) {
     let page = this;
@@ -280,6 +285,21 @@ export class BallVsWildPage {
   private updateFrame(dtMilliseconds: number) {
     this.millisSinceLastShot += dtMilliseconds;
 
+    this.millisUntilDoom -= dtMilliseconds;
+    if (this.millisUntilDoom <= 0) {
+      this.isEnemiesGoingBallistic = !this.isEnemiesGoingBallistic;
+      let scalar = this.isEnemiesGoingBallistic ? 0.5 : 2;
+      let consequence = this.isEnemiesGoingBallistic ? 0.75 : 1.5;
+
+      this.enemyGenerators.forEach(function(generator){
+        generator.spawnRateMilliseconds = generator.spawnRateMilliseconds * scalar;
+      });
+      this.itemGenerators.forEach(function(generator){
+        generator.spawnRateMilliseconds = generator.spawnRateMilliseconds / consequence;
+      });
+      this.millisUntilDoom = Math.random() * BallVsWildPage.WAVELENGTH_MILLIS + 3000;
+    }
+
     for (var i = 0; i < this.enemyGenerators.length; i++){
 
       let enemy = <Enemy>this.enemyGenerators[i].tick(dtMilliseconds);
@@ -336,6 +356,10 @@ export class BallVsWildPage {
           this.enemyGenerators.forEach(function(enemyGenerator){
             enemyGenerator.totalGameTimeMillis = 0;
           });
+
+          this.isEnemiesGoingBallistic = false;
+          this.millisUntilDoom = BallVsWildPage.WAVELENGTH_MILLIS;
+
           if (this.millisUntilNextAd <= 0){
             setTimeout(function(){
               admob.showInterstitialAd();
@@ -531,7 +555,7 @@ export class BallVsWildPage {
     }
   }
   onTouchEnd(event) {
-    if (this.isHighScoresDisplayed){
+    if (this.isHighScoresDisplayed && !this.isHighScore){
       this.healthBar.healthPoints = HealthBar.DEFAULT_MAX_HP;
       this.powerupSelector.clearBars();
       this.projectiles = [];
@@ -602,7 +626,7 @@ initAds() {
       publisherId:          admobid.banner,
       interstitialAdId:     admobid.interstitial,
       autoShowInterstitial: false,
-      isTesting: true
+      isTesting: false
     });
 
     this.registerAdEvents();
@@ -713,6 +737,8 @@ makeid(length): string
 
     let pauseButtonLocation = new Dimensions(10, 10 + 60, this.buttonSize(), this.buttonSize());
     this.pauseButton = new PauseButton(this.spritesImg, page.PAUSE_IMG_DIMENSIONS, page.PLAY_IMG_DIMENSIONS, pauseButtonLocation);
+
+    this.millisUntilDoom = BallVsWildPage.WAVELENGTH_MILLIS;
 
     this.initAds();
     admob.requestInterstitialAd();
