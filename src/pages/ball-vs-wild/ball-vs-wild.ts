@@ -15,6 +15,7 @@ import {AuthMethods} from "angularfire2";
  import firebase from 'firebase';
 declare var admob;
 declare var device;
+declare var angular;
 
 
 // import {Http} from 'angular2/http';
@@ -219,8 +220,9 @@ export class BallVsWildPage {
   }
 
   setUsername(){
-    console.log("mother fukcer");
-    this.userName = document.getElementById("userName").innerHTML;
+    let inputName = (<HTMLInputElement>document.getElementById("userName")).value;
+    this.userName = (inputName.length > 12) ? inputName.substring(0, 12) : inputName;
+
     this.storage.set("userName", this.userName);
     this.isHighScore = false;
 
@@ -234,7 +236,7 @@ export class BallVsWildPage {
         return result;
       });
       this.highScores = sortedScores;
-     this.highScores.splice(0, 1);
+     this.highScores.splice(this.highScores.length - 1, 1);
       this.highScores.push({name: this.userName, score: this.score});
       this.http.put('https://api.myjson.com/bins/6f8ed', this.highScores).map(res => res.json()).subscribe(
         (data) => {});
