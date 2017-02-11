@@ -151,20 +151,13 @@ export class BallVsWildPage {
             }
             else if (self.isHighScoresDisplayed) {
               if (self.userName || !self.isHighScore){
+                self.userName = "";
                 document.getElementById("usernameField").style.display = "none";
 
-                if (!self.isScoresSorted) {
-                  self.highScores = self.highScores.sort(function(a, b){
-                    let result = 0;
-                    if (a["score"] > b["score"]){
-                      let result = 1;
-                    } else if (a["score"] < b["score"]) {
-                      let result = -1;
-                    }
-                    return result;
-                  });
-                  self.isScoresSorted = true;
-                }
+                //if (!self.isScoresSorted) {
+                  
+                  //self.isScoresSorted = true;
+                //}
                 let centerX = ctx.canvas.width / 2;
                 let topY = ctx.canvas.height * 0.1;
 
@@ -181,6 +174,15 @@ export class BallVsWildPage {
                 ctx.textAlign = "left";
                 let leftMargin = ctx.canvas.width * 0.1;
 
+                self.highScores.sort(function(a, b){
+                  let result = 0;
+                  if (a["score"] < b["score"]){
+                    result = 1;
+                  } else if (a["score"] > b["score"]) {
+                    result = -1;
+                  }i
+                  return result;
+                });
                 for (var i = 0; i < self.highScores.length; i++) {
                   ctx.fillText(self.highScores[i]["name"], leftMargin, topY + 25 + (25 * i));
                 }
@@ -226,18 +228,18 @@ export class BallVsWildPage {
     this.storage.set("userName", this.userName);
     this.isHighScore = false;
 
-    let sortedScores = this.highScores.sort(function(a, b){
+    this.highScores.sort(function(a, b){
         let result = 0;
-        if (a["score"] > b["score"]){
-          let result = 1;
-        } else if (a["score"] < b["score"]) {
-          let result = -1;
+        if (a["score"] < b["score"]){
+          result = 1;
+        } else if (a["score"] > b["score"]) {
+          result = -1;
         }
         return result;
       });
-      this.highScores = sortedScores;
      this.highScores.splice(this.highScores.length - 1, 1);
       this.highScores.push({name: this.userName, score: this.score});
+     // this.isScoresSorted = false;
       this.http.put('https://api.myjson.com/bins/6f8ed', this.highScores).map(res => res.json()).subscribe(
         (data) => {});
   }
@@ -434,18 +436,18 @@ export class BallVsWildPage {
   }
 
   checkHighScore() {
-    let sortedScores = this.highScores.sort(function(a, b){
+    this.highScores.sort(function(a, b){
       let result = 0;
-      if (a["score"] > b["score"]){
-        let result = 1;
-      } else if (a["score"] < b["score"]) {
-        let result = -1;
+      if (a["score"] < b["score"]){
+        result = 1;
+      } else if (a["score"] > b["score"]) {
+        result = -1;
       }
       return result;
     });
     let place = -1;
-    for (var i = 0; i < sortedScores.length; i++){
-      if (this.score > sortedScores[i]["score"] && place <= 0) {
+    for (var i = 0; i < this.highScores.length; i++){
+      if (this.score > this.highScores[i]["score"] && place <= 0) {
         place = i + 1;
       }
     }
