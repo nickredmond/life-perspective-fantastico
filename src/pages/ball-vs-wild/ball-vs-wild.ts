@@ -8,6 +8,8 @@ import { EnemyProducer, ItemProducer } from "../../models/enemy.producer";
 import { ExtendedMath } from  "../../models/extendedmath";
 import { PauseButton } from "../../models/buttons";
 import { Dimensions, SpriteDimensions } from "../../models/dimensions";
+import { GraphicArtist } from "../../models/graphic.artist";
+
 declare var admob;
 
 import {Http} from '@angular/http';
@@ -82,12 +84,14 @@ export class BallVsWildPage {
 
   millisSinceLastShot: number = 0;
 
-  highScores: Object[] = [];
+  highScoresAllTime: Object[] = [];
+  highScoresToday: Object[] = [];
    isHighScoresDisplayed: boolean = false;
   userName: string = "";
   http: Http;
   isScoresSorted: boolean = false;
   isHighScore: boolean = false;
+  leaderboardName: string = "";
   placeTaken: number = -1;
   valueFlag: boolean = false;
   isUsernameSetIgnored: boolean = false;
@@ -96,23 +100,29 @@ export class BallVsWildPage {
   isEnemiesGoingBallistic: boolean = false;
   millisUntilDoom: number = 0;
 
+  static readonly DAILY_LEADERBOARD_NAME: string = "today";
+  static readonly ALL_TIME_LEADERBOARD_NAME: string = "allTime";
+  highScores: Object = {
+    "today": {
+      "scores": [],
+      "bucketName": "13j9a9",
+      "identifier": "DAILY"
+    },
+    "allTime": {
+      "scores": [],
+      "bucketName": "6f8ed",
+      "identifier": "ALL-TIME"
+    }
+  };
+
   constructor(storage: Storage, http: Http) {
     let page = this;
     this.http = http;
-    http.get('https://api.myjson.com/bins/6f8ed').map(res => res.json()).subscribe(
-      (data) => {
-        if (!(data && data.length > 0)) {
-          for (var i = 0; i < 10; i++) {
-            let plyr = "player" + (i + 1);
-            this.highScores.push({"name": plyr, "score": 1100 - (100 * i)});
-          }
-          http.put('https://api.myjson.com/bins/6f8ed', this.highScores).map(res => res.json()).subscribe(
-            (data) => {});
-        } else {
-          this.highScores = data;
-        }
-      }
-    );
+
+    let allTimeName = BallVsWildPage.ALL_TIME_LEADERBOARD_NAME;
+    let dailyName = BallVsWildPage.DAILY_LEADERBOARD_NAME;
+    this.setLeaderboards(allTimeName, this.highScores[allTimeName]["bucketName"]);
+    this.setLeaderboards(dailyName, this.highScores[dailyName]["bucketName"]);
 
     this.spritesImg = new Image();
     this.spritesImg.src = "img/sprites.png";
@@ -145,44 +155,13 @@ export class BallVsWildPage {
             }
             else if (self.isHighScoresDisplayed) {
               if (self.userName || !self.isHighScore){
-                self.userName = "";
-                document.getElementById("usernameField").style.display = "none";
-
                 let centerX = ctx.canvas.width / 2;
-                let topY = ctx.canvas.height * 0.1;
-
-                if (ctx.font != "30px Courier" || ctx.textAlign != "center") {
-                  ctx.font = "30px Courier";
-                  ctx.textAlign = "center";
-                }
-                ctx.fillText("HIGH SCORES", centerX, topY - 20);
-                ctx.fillRect(ctx.canvas.width * 0.1, topY, ctx.canvas.width * 0.8, 3);
-
-                ctx.font = "18px Courier";
-                ctx.fillText("(Tap to retry)", centerX, topY + 50 + (self.highScores.length * 25));
-
-                ctx.textAlign = "left";
-                let leftMargin = ctx.canvas.width * 0.1;
-
-                self.highScores.sort(function(a, b){
-                  let result = 0;
-                  if (a["score"] < b["score"]){
-                    result = 1;
-                  } else if (a["score"] > b["score"]) {
-                    result = -1;
-                  }i
-                  return result;
-                });
-                for (var i = 0; i < self.highScores.length; i++) {
-                  ctx.fillText(self.highScores[i]["name"], leftMargin, topY + 25 + (25 * i));
-                }
-
-                ctx.textAlign = "right";
-                let rightMargin = ctx.canvas.width * 0.9;
-
-                for (var i = 0; i < self.highScores.length; i++) {
-                  ctx.fillText(self.highScores[i]["score"], rightMargin, topY + 25 + (25 * i));
-                }
+                let allTimeScores = self.highScores[BallVsWildPage.ALL_TIME_LEADERBOARD_NAME];
+                let dailyScores = self.highScores[BallVsWildPage.DAILY_LEADERBOARD_NAME];
+                GraphicArtist.drawHighScores(self, ctx, allTimeScores,
+                  centerX, ctx.canvas.height * 0.1);
+                GraphicArtist.drawHighScores(self, ctx, dailyScores,
+                  centerX, ctx.canvas.height * 0.45, true);
               }
               else {
                 document.getElementById("usernameField").style.display = "block";
@@ -217,7 +196,7 @@ export class BallVsWildPage {
       this.userName = (inputName.length > 12) ? inputName.substring(0, 12) : inputName;
       this.isHighScore = false;
 
-      this.highScores.sort(function(a, b){
+      this.highScores[this.leaderboardName]["scores"].sort(function(a, b){
           let result = 0;
           if (a["score"] < b["score"]){
             result = 1;
@@ -226,9 +205,12 @@ export class BallVsWildPage {
           }
           return result;
         });
-       this.highScores.splice(this.highScores.length - 1, 1);
-        this.highScores.push({name: this.userName, score: this.score});
-        this.http.put('https://api.myjson.com/bins/6f8ed', this.highScores).map(res => res.json()).subscribe(
+
+       let name = this.leaderboardName;
+       let bucket = this.highScores[name]["bucketName"];
+       this.highScores[name]["scores"].splice(this.highScores[name]["scores"].length - 1, 1);
+        this.highScores[name]["scores"].push({name: this.userName, score: this.score});
+        this.http.put('https://api.myjson.com/bins/' + bucket, this.highScores[name]["scores"]).map(res => res.json()).subscribe(
           (data) => {});
     }
   }
@@ -369,7 +351,8 @@ export class BallVsWildPage {
             this.millisUntilNextAd = BallVsWildPage.MILLIS_BETWEEN_ADS;
           }
           this.isContinueEnabled = !this.isContinueEnabled;
-          this.checkHighScore();
+          this.checkHighScore(BallVsWildPage.DAILY_LEADERBOARD_NAME);
+          this.checkHighScore(BallVsWildPage.ALL_TIME_LEADERBOARD_NAME);
         }
         this.healthBar.takeHealth();
         enemy.isAlive = false;
@@ -445,8 +428,29 @@ export class BallVsWildPage {
     this.powerupSelector.updatePowerupbars(dtMilliseconds);
   }
 
-  checkHighScore() {
-    this.highScores.sort(function(a, b){
+  private setLeaderboards(leaderboardName: string, jsonBucketID: string) {
+    this.http.get('https://api.myjson.com/bins/' + jsonBucketID).map(res => res.json()).subscribe(
+      (data) => {
+        if (!(data && data.length > 0)) {
+          for (var i = 0; i < 5; i++) {
+            let plyr = "player" + (i + 1);
+            this.highScores[leaderboardName]["scores"].push(
+              {"name": plyr, "score": 1100 - (100 * i)}
+            );
+          }
+          this.http.put('https://api.myjson.com/bins/' + jsonBucketID, 
+              this.highScores[leaderboardName]["scores"]).map(res => res.json())
+            .subscribe((data) => {});
+        } else {
+          this.highScores[leaderboardName]["scores"] = data;
+        }
+      }
+    );
+  }
+
+  checkHighScore(leaderboardName: string) {
+    let scores = <Object[]>this.highScores[leaderboardName]["scores"];
+    this.highScores[leaderboardName]["scores"].sort(function(a, b){
       let result = 0;
       if (a["score"] < b["score"]){
         result = 1;
@@ -456,16 +460,18 @@ export class BallVsWildPage {
       return result;
     });
     let place = -1;
-    for (var i = 0; i < this.highScores.length; i++){
-      if (this.score > this.highScores[i]["score"] && place <= 0) {
+    for (var i = 0; i < scores.length; i++){
+      if (this.score > scores[i]["score"] && place <= 0) {
         place = i + 1;
       }
     }
     if (place > 0) {
       this.isHighScore = true;
+      (<HTMLInputElement>document.getElementById("leaderboardName")).value = this.highScores[leaderboardName]["identifier"];
       (<HTMLInputElement>document.getElementById("scoreLabel")).value = this.score.toString();;
       (<HTMLInputElement>document.getElementById("rankingLabel")).value = "(" + this.place(place) + " place)";
       this.placeTaken = place;
+      this.leaderboardName = leaderboardName;
     }
   }
   private place(value) {
