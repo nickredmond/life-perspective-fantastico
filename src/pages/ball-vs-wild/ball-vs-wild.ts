@@ -352,9 +352,11 @@ export class BallVsWildPage {
           this.updateHighScore();
           this.itemGenerators.forEach(function(itemGenerator){
             itemGenerator.totalGameTimeMillis = 0;
+            itemGenerator.resetSpawnRate();
           });
           this.enemyGenerators.forEach(function(enemyGenerator){
             enemyGenerator.totalGameTimeMillis = 0;
+            enemyGenerator.resetSpawnRate();
           });
 
           this.isEnemiesGoingBallistic = false;

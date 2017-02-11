@@ -5,6 +5,7 @@ export class UnitProducer {
 	size: number;
 	velocity: number;
 	spawnRateMilliseconds: number;
+  originalSpawnRate: number;
   millisTilNextSpawn: number = 0;
   canvasContext: CanvasRenderingContext2D;
   totalGameTimeMillis: number = 0;
@@ -13,6 +14,7 @@ export class UnitProducer {
     this.size = size;
     this.velocity = velocity;
     this.spawnRateMilliseconds = spawnRateMillis;
+    this.originalSpawnRate = spawnRateMillis;
     this.canvasContext = ctx;
 
     this.resetSpawnTimer();
@@ -33,6 +35,9 @@ export class UnitProducer {
     return unit;
   }
 
+  resetSpawnRate(){
+    this.spawnRateMilliseconds = this.originalSpawnRate;
+  }
   resetSpawnTimer(){
     this.millisTilNextSpawn = Math.random() * this.spawnRateMilliseconds;
   }
