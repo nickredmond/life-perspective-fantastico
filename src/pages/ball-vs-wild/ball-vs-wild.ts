@@ -634,7 +634,7 @@ initAds() {
       publisherId:          admobid.banner,
       interstitialAdId:     admobid.interstitial,
       autoShowInterstitial: false,
-      isTesting: true
+      isTesting: false
     });
 
     this.registerAdEvents();
