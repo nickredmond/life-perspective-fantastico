@@ -6,10 +6,14 @@
     (tapEvent)="onSingleTap($event)"
     (doubleTapEvent)="onDoubleTap($event)">
   </canvas>
-  <div id="usernameField" style="z-index: 1000; position: absolute; display: none; color: white
-    font: 18px Courier; padding: 0.25em; border: 0.1em solid white;">
-    <input id="userName" type="text" placeholder="Enter name . . ." />
-    <button ion-button type="button" (click)="setUsername()">Save</button>
+  <div id="usernameField" class="gameInputContainer">
+    <div class="scoreLabelContainer">
+      <span class="gameModalHeader">LEADERBOARD!</span>
+      <input id="scoreLabel" type="text" />
+      <input id="rankingLabel" type="text" />
+    </div>
+    <input class="gameInput" id="userName" type="text" placeholder="Enter name . . ." />
+    <button class="gameInputButton" ion-button type="button" (click)="setUsername()">Save</button>
   </div>
   <!-- <div class="g-signin2" data-onsuccess="onSignIn"></div> -->
 <!--   <ion-header id="viewHeader" id="hs2" *ngIf="!isUserNameSet">

@@ -100,6 +100,8 @@ export class BallVsWildPage {
   // isUserNameSet: boolean = false;
   isScoresSorted: boolean = false;
   isHighScore: boolean = false;
+  placeTaken: number = -1;
+  isUsernameSet: boolean = false;
 
   constructor(storage: Storage, http: Http, public af: AngularFire) {
     let page = this;
@@ -131,6 +133,9 @@ export class BallVsWildPage {
         this.highScore = val;
       }
     });
+    this.storage.get("userName").then((val) => {
+      this.userName = val;
+    });
 
     this.healthBar = new HealthBar(15, 15);
     let dtMillis = BallVsWildPage.MILLIS_PER_SECOND / BallVsWildPage.FPS;
@@ -154,10 +159,6 @@ export class BallVsWildPage {
                 self.userName = "";
                 document.getElementById("usernameField").style.display = "none";
 
-                //if (!self.isScoresSorted) {
-                  
-                  //self.isScoresSorted = true;
-                //}
                 let centerX = ctx.canvas.width / 2;
                 let topY = ctx.canvas.height * 0.1;
 
@@ -196,6 +197,10 @@ export class BallVsWildPage {
               }
               else {
                 document.getElementById("usernameField").style.display = "block";
+                if (self.userName && !self.isUsernameSet){
+                  (<HTMLInputElement>document.getElementById("userName")).value = self.userName;
+                  self.isUsernameSet = true;
+                }
               }
             }
             else{
@@ -453,10 +458,13 @@ export class BallVsWildPage {
     }
     if (place > 0) {
       this.isHighScore = true;
-         
+      (<HTMLInputElement>document.getElementById("scoreLabel")).value = this.score.toString();;
+      (<HTMLInputElement>document.getElementById("rankingLabel")).value = "(" + this.place(place) + " place)";
+      //(<HTMLSpanElement>document.getElementById("scoreLabel")).innerHTML = this.score.toString();
+      //(<HTMLSpanElement>document.getElementById("rankingLabel")).innerHTML = "(" + this.place(place) + " place)";
       // this.isHighScoreAchieved = true;
       // this.leaderboardScore = "SCORE: " + this.score + " (" + this.place(place) + ")";
-      // this.placeTaken = place;
+      this.placeTaken = place;
     }
   }
   private place(value) {
@@ -591,13 +599,7 @@ export class BallVsWildPage {
     // this.isHighScoreAchieved = false;
     // let scoreName = this.userName;
 
-    // this.storage.get("userName").then((val) => {
-    //   if (val === null){
-    //     this.storage.set("userName", scoreName);
-    //   } else {
-    //     scoreName = (scoreName && scoreName.length > 0) ? scoreName : val;
-    //   }
-    // });
+    
 
     // this.highScores.pop();
     //   if (this.placeTaken < this.highScores.length){
