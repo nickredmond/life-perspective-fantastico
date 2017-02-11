@@ -9,17 +9,10 @@ import { ExtendedMath } from  "../../models/extendedmath";
 import { PauseButton } from "../../models/buttons";
 import { Dimensions, SpriteDimensions } from "../../models/dimensions";
 import { Device } from 'ionic-native';
-import { AngularFire, AuthProviders, FirebaseAuthState } from 'angularfire2';
-import {GooglePlus} from 'ionic-native';
-import {AuthMethods} from "angularfire2";
- import firebase from 'firebase';
 declare var admob;
 declare var device;
 declare var angular;
 
-
-// import {Http} from 'angular2/http';
-// import 'rxjs/Rx';
 import {Http} from '@angular/http';
 import 'rxjs/add/operator/map';
 
@@ -92,26 +85,24 @@ export class BallVsWildPage {
 
   highScores: Object[] = [];
    isHighScoresDisplayed: boolean = false;
-  // isHighScoreAchieved: boolean = false;
-  // leaderboardScore: string = "";
-  // placeTaken: number = -1;
   userName: string = "";
   http: Http;
-  // isUserNameSet: boolean = false;
   isScoresSorted: boolean = false;
   isHighScore: boolean = false;
   placeTaken: number = -1;
-  isUsernameSet: boolean = false;
+  valueFlag: boolean = false;
+  isUsernameSetIgnored: boolean = false;
+  isButtonPress: boolean = true;
 
-  constructor(storage: Storage, http: Http, public af: AngularFire) {
+  constructor(storage: Storage, http: Http) {
     let page = this;
     this.http = http;
     http.get('https://api.myjson.com/bins/6f8ed').map(res => res.json()).subscribe(
       (data) => {
         if (!(data && data.length > 0)) {
-          for (var i = 0; i < 5; i++) {
+          for (var i = 0; i < 10; i++) {
             let plyr = "player" + (i + 1);
-            this.highScores.push({"name": plyr, "score": 1000 - (200 * i)});
+            this.highScores.push({"name": plyr, "score": 1100 - (100 * i)});
           }
           http.put('https://api.myjson.com/bins/6f8ed', this.highScores).map(res => res.json()).subscribe(
             (data) => {});
@@ -127,14 +118,11 @@ export class BallVsWildPage {
     this.storage = storage;
     this.storage.get("highScore").then((val) => {
       if (val === null){
-        this.storage.set("highScore", 0);
+        page.storage.set("highScore", 0);
       }
       else {
-        this.highScore = val;
+        page.highScore = val;
       }
-    });
-    this.storage.get("userName").then((val) => {
-      this.userName = val;
     });
 
     this.healthBar = new HealthBar(15, 15);
@@ -197,10 +185,6 @@ export class BallVsWildPage {
               }
               else {
                 document.getElementById("usernameField").style.display = "block";
-                if (self.userName && !self.isUsernameSet){
-                  (<HTMLInputElement>document.getElementById("userName")).value = self.userName;
-                  self.isUsernameSet = true;
-                }
               }
             }
             else{
@@ -228,25 +212,24 @@ export class BallVsWildPage {
 
   setUsername(){
     let inputName = (<HTMLInputElement>document.getElementById("userName")).value;
-    this.userName = (inputName.length > 12) ? inputName.substring(0, 12) : inputName;
+    if (!this.userName && inputName && inputName.length > 0){
+      this.userName = (inputName.length > 12) ? inputName.substring(0, 12) : inputName;
+      this.isHighScore = false;
 
-    this.storage.set("userName", this.userName);
-    this.isHighScore = false;
-
-    this.highScores.sort(function(a, b){
-        let result = 0;
-        if (a["score"] < b["score"]){
-          result = 1;
-        } else if (a["score"] > b["score"]) {
-          result = -1;
-        }
-        return result;
-      });
-     this.highScores.splice(this.highScores.length - 1, 1);
-      this.highScores.push({name: this.userName, score: this.score});
-     // this.isScoresSorted = false;
-      this.http.put('https://api.myjson.com/bins/6f8ed', this.highScores).map(res => res.json()).subscribe(
-        (data) => {});
+      this.highScores.sort(function(a, b){
+          let result = 0;
+          if (a["score"] < b["score"]){
+            result = 1;
+          } else if (a["score"] > b["score"]) {
+            result = -1;
+          }
+          return result;
+        });
+       this.highScores.splice(this.highScores.length - 1, 1);
+        this.highScores.push({name: this.userName, score: this.score});
+        this.http.put('https://api.myjson.com/bins/6f8ed', this.highScores).map(res => res.json()).subscribe(
+          (data) => {});
+    }
   }
 
   updateHighScore(){
@@ -460,15 +443,11 @@ export class BallVsWildPage {
       this.isHighScore = true;
       (<HTMLInputElement>document.getElementById("scoreLabel")).value = this.score.toString();;
       (<HTMLInputElement>document.getElementById("rankingLabel")).value = "(" + this.place(place) + " place)";
-      //(<HTMLSpanElement>document.getElementById("scoreLabel")).innerHTML = this.score.toString();
-      //(<HTMLSpanElement>document.getElementById("rankingLabel")).innerHTML = "(" + this.place(place) + " place)";
-      // this.isHighScoreAchieved = true;
-      // this.leaderboardScore = "SCORE: " + this.score + " (" + this.place(place) + ")";
       this.placeTaken = place;
     }
   }
   private place(value) {
-    let p = "None";
+    let p = "No";
     switch (value) {
       case 1:
         p = "1st";
@@ -484,6 +463,21 @@ export class BallVsWildPage {
         break;
       case 5:
         p = "5th";
+        break;
+      case 6:
+        p = "6th";
+        break;
+      case 7:
+        p = "7th";
+        break;
+      case 8:
+        p = "8th";
+        break;
+      case 9:
+        p = "9th";
+        break;
+      case 10:
+        p = "10th";
         break;
       default:
         break;
@@ -591,26 +585,6 @@ export class BallVsWildPage {
 
   private buttonSize() {
     return Math.max(40, this.canvasContext.canvas.width * 0.16);
-  }
-
-  saveScore() {
-    this.storage.set("userName", this.userName);
-
-    // this.isHighScoreAchieved = false;
-    // let scoreName = this.userName;
-
-    
-
-    // this.highScores.pop();
-    //   if (this.placeTaken < this.highScores.length){
-    //     this.highScores[this.placeTaken - 1] = this.score;
-    //   } else {
-    //     this.highScores.push({name: scoreName, score: this.score});
-    //   }
-    // this.http.put('https://api.myjson.com/bins/6f8ed', this.highScores).map(res => res.json()).subscribe(
-    //         (data) => {});
-    // this.isHighScoreAchieved = false;
-    // this.isHighScoresDisplayed = true;
   }
 
 initAds() {
