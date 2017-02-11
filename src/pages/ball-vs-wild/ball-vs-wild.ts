@@ -3,15 +3,12 @@ import { Storage } from "@ionic/storage";
 import { ShapeUnit, ImageUnit, Enemy } from "../../models/unit";
 import { Color } from "../../models/color";
 import { Shape, Circle } from "../../models/shapes";
-import { PowerupBar, HealthBar, RadialShotBar, ShieldBar, PowerupSelector } from "../../models/statusbars";
+import { HealthBar, RadialShotBar, ShieldBar, PowerupSelector } from "../../models/statusbars";
 import { EnemyProducer, ItemProducer } from "../../models/enemy.producer";
 import { ExtendedMath } from  "../../models/extendedmath";
 import { PauseButton } from "../../models/buttons";
 import { Dimensions, SpriteDimensions } from "../../models/dimensions";
-import { Device } from 'ionic-native';
 declare var admob;
-declare var device;
-declare var angular;
 
 import {Http} from '@angular/http';
 import 'rxjs/add/operator/map';
@@ -128,7 +125,6 @@ export class BallVsWildPage {
     this.healthBar = new HealthBar(15, 15);
     let dtMillis = BallVsWildPage.MILLIS_PER_SECOND / BallVsWildPage.FPS;
 
-    let self = this;
     setInterval((
       function(self, dtMilliseconds){
         return function() {
