@@ -58,8 +58,5 @@
   <plugin name="cordova-plugin-device" spec="1.1.4"/>
   <plugin name="cordova-plugin-splashscreen" spec="~4.0.1"/>
   <plugin name="cordova-sqlite-storage" spec="~2.0.1"/>
-  <plugin name="cordova-plugin-googleplus" spec="~5.1.1">
-    <variable name="REVERSED_CLIENT_ID" value="581611933375-2t5h7aioub4ojb1k65jo8ele8evkpj5r.apps.googleusercontent.com"/>
-  </plugin>
   <icon src="resources\android\icon\drawable-xhdpi-icon.png"/>
 </widget>

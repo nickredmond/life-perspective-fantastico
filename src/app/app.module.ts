@@ -24,8 +24,7 @@ import { Storage } from '@ionic/storage';
   ],
   providers: [
     {provide: ErrorHandler, useClass: IonicErrorHandler},
-    Storage,
-    // HTTP_PROVIDERS
+    Storage
   ]
 })
 export class AppModule {}
