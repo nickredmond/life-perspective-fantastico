@@ -1,17 +1,19 @@
-<!-- <ion-header id="viewHeader">
-  <ion-navbar>
-    <button ion-button menuToggle>
-      <ion-icon name="menu"></ion-icon>
-    </button>
-    <ion-title>Ball vs Wild</ion-title>
-  </ion-navbar>
-</ion-header> -->
-
-<ion-content>
+<ion-content style="background-color: black;">
   <canvas anyPress id="mainCanvas"
   	(touchend)="onTouchEnd($event)"
-  	(panEvent)="onDragGesture($event)"
+    (panEvent)="onDragGesture($event)"
     (tapEvent)="onSingleTap($event)"
-  	(doubleTapEvent)="onDoubleTap($event)">
+    (doubleTapEvent)="onDoubleTap($event)">
   </canvas>
+  <div id="usernameField" class="gameInputContainer">
+    <div class="scoreLabelContainer">
+      <span class="gameModalHeader">LEADERBOARD!</span>
+      <input id="scoreLabel" disabled="true" type="text" />
+      <input id="rankingLabel" disabled="true" type="text" />
+    </div>
+    <input class="gameInput" id="userName" type="text" placeholder="Enter name . . ." />
+    <button class="gameInputButton" ion-button type="button" (click)="setUsername(true)">Save</button>
+  </div>
 </ion-content>
+
+

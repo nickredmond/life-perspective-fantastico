@@ -1,6 +1,5 @@
 import { Enemy, ImageUnit, Unit } from "./unit";
 import { Dimensions } from "./dimensions";
-import { BallVsWildPage } from "../pages/ball-vs-wild/ball-vs-wild";
 
 export class UnitProducer {
 	size: number;

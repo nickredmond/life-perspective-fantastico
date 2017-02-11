@@ -1,3 +1,61 @@
 page-ball-vs-wild {
 	
 }
+
+.gameInput {
+	border: 0.1em solid rgb(170, 170, 170); 
+	font: 18px Courier;
+	background-color: transparent;
+	width: 80%;
+	padding: 0.25em;
+    margin-top: 2em;
+    color: white;
+}
+
+.gameInputContainer {
+	z-index: 1000;
+	position: absolute;
+	display: none;
+	padding: 0.25em;
+	margin: 10% 0 0 15%;
+	width: 80%;
+}
+
+.gameInputButton {
+	background-color: transparent;
+	border-radius: 0.25em;
+	color: white;
+	font: 18px Courier;
+	width: 80%;
+	margin-top: 0.5em;
+	border: 0.15em solid #CCC;
+}
+
+.scoreLabelContainer {
+	text-align: center;
+	width: 80%;
+}
+#scoreLabel {
+	font: 36px Courier;
+	font-weight: bold;
+	color: white;
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    text-align: center;
+    width: 80%;
+    margin-top: 1em;
+}
+#rankingLabel {
+	font: 18px Courier;
+	color: #CCC;
+    background-color: transparent;
+    border: none;
+    text-align: center;
+}
+
+.gameModalHeader {
+	font: 28px Courier;
+	font-weight: bold;
+	color: white;
+}
