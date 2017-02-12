@@ -9,6 +9,9 @@ import { ExtendedMath } from  "../../models/extendedmath";
 import { PauseButton } from "../../models/buttons";
 import { Dimensions, SpriteDimensions } from "../../models/dimensions";
 import { GraphicArtist } from "../../models/graphic.artist";
+import { RickRollManager } from "../../models/rickroll.manager";
+
+import { InAppBrowser } from "ionic-native";
 
 declare var admob;
 
@@ -99,6 +102,7 @@ export class BallVsWildPage {
 
   isEnemiesGoingBallistic: boolean = false;
   millisUntilDoom: number = 0;
+  rickRoller: RickRollManager = new RickRollManager();
 
   static readonly DAILY_LEADERBOARD_NAME: string = "today";
   static readonly ALL_TIME_LEADERBOARD_NAME: string = "allTime";
@@ -223,6 +227,9 @@ export class BallVsWildPage {
   }
 
   gameTick(dtMilliseconds: number){
+    this.rickRoller.update(dtMilliseconds);
+    this.rickRoller.draw(this.canvasContext);
+
     if (!this.pauseButton.isPaused()) {
       this.updateFrame(dtMilliseconds);
     }
@@ -260,7 +267,9 @@ export class BallVsWildPage {
       if (ctx.textAlign != "center") {
         ctx.textAlign = "center";
       }
-      ctx.fillText("P A U S E", ctx.canvas.width / 2, ctx.canvas.height / 2);
+      if (this.rickRoller.numberOfPauses < this.rickRoller.hintAmount) {
+        ctx.fillText("P A U S E", ctx.canvas.width / 2, ctx.canvas.height / 2);
+      }
     }
   }
 
@@ -608,6 +617,9 @@ export class BallVsWildPage {
     if (btn.x < centerX && centerX < btn.x + btn.width &&
         btn.y < centerY && centerY < btn.y + btn.height) {
       this.pauseButton.togglePause();
+      if (this.pauseButton.isPaused()) {
+        this.rickRoller.onPaused();
+      }
     }
   }
 
@@ -634,7 +646,7 @@ initAds() {
       publisherId:          admobid.banner,
       interstitialAdId:     admobid.interstitial,
       autoShowInterstitial: false,
-      isTesting: false
+      isTesting: true
     });
 
     this.registerAdEvents();
@@ -750,7 +762,5 @@ makeid(length): string
 
     this.initAds();
     admob.requestInterstitialAd();
-
-    // document.getElementById("highScoreLabel").innerHTML = 
   }
 }
