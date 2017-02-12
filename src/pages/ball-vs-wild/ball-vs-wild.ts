@@ -3,7 +3,7 @@ import { Storage } from "@ionic/storage";
 import { ShapeUnit, ImageUnit, Enemy } from "../../models/unit";
 import { Color } from "../../models/color";
 import { Shape, Circle } from "../../models/shapes";
-import { HealthBar, RadialShotBar, ShieldBar, PowerupSelector } from "../../models/statusbars";
+import { HealthBar, RadialShotBar, ShieldBar, SlowMotionBar, PowerupSelector } from "../../models/statusbars";
 import { EnemyProducer, ItemProducer } from "../../models/enemy.producer";
 import { ExtendedMath } from  "../../models/extendedmath";
 import { PauseButton } from "../../models/buttons";
@@ -103,6 +103,7 @@ export class BallVsWildPage {
   isEnemiesGoingBallistic: boolean = false;
   millisUntilDoom: number = 0;
   rickRoller: RickRollManager = new RickRollManager();
+  timeMultiplier: number = 1;
 
   static readonly DAILY_LEADERBOARD_NAME: string = "today";
   static readonly ALL_TIME_LEADERBOARD_NAME: string = "allTime";
@@ -226,12 +227,13 @@ export class BallVsWildPage {
     }
   }
 
-  gameTick(dtMilliseconds: number){
-    this.rickRoller.update(dtMilliseconds);
+  gameTick(dtMillis: number){
+    let dtMillisFinal = this.timeMultiplier * dtMillis;
+    this.rickRoller.update(dtMillisFinal);
     this.rickRoller.draw(this.canvasContext);
 
     if (!this.pauseButton.isPaused()) {
-      this.updateFrame(dtMilliseconds);
+      this.updateFrame(dtMillisFinal);
     }
 
     this.powerupSelector.draw();
@@ -627,89 +629,92 @@ export class BallVsWildPage {
     return Math.max(40, this.canvasContext.canvas.width * 0.16);
   }
 
-initAds() {
-  if (admob) {
-    var adPublisherIds = {
-      // ios : {
-      //   banner : "ca-app-pub-XXXXXXXXXXXXXXXX/BBBBBBBBBB",
-      //   interstitial : "ca-app-pub-XXXXXXXXXXXXXXXX/IIIIIIIIII"
-      // },
-      android : {
-        banner : "ca-app-pub-3035178355763743~7102114115",
-        interstitial: "ca-app-pub-3035178355763743/"
+  initAds() {
+    if (admob) {
+      var adPublisherIds = {
+        // ios : {
+        //   banner : "ca-app-pub-XXXXXXXXXXXXXXXX/BBBBBBBBBB",
+        //   interstitial : "ca-app-pub-XXXXXXXXXXXXXXXX/IIIIIIIIII"
+        // },
+        android : {
+          banner : "ca-app-pub-3035178355763743~7102114115",
+          interstitial: "ca-app-pub-3035178355763743/"
+        }
+      };
+
+      var admobid = (/(android)/i.test(navigator.userAgent)) ? adPublisherIds.android : null/*adPublisherIds.ios*/;
+
+      admob.setOptions({
+        publisherId:          admobid.banner,
+        interstitialAdId:     admobid.interstitial,
+        autoShowInterstitial: false,
+        isTesting: true
+      });
+
+      this.registerAdEvents();
+
+    } else {
+      alert('AdMobAds plugin not ready');
+    }
+  }
+
+  onAdLoaded(e) {
+    if (true) {
+      if (e.adType === admob.AD_TYPE.INTERSTITIAL) {
+        this.isAdsLoaded = true;
+        this.isContinueEnabled = true;
       }
-    };
-
-    var admobid = (/(android)/i.test(navigator.userAgent)) ? adPublisherIds.android : null/*adPublisherIds.ios*/;
-
-    admob.setOptions({
-      publisherId:          admobid.banner,
-      interstitialAdId:     admobid.interstitial,
-      autoShowInterstitial: false,
-      isTesting: true
-    });
-
-    this.registerAdEvents();
-
-  } else {
-    alert('AdMobAds plugin not ready');
-  }
-}
-
-onAdLoaded(e) {
-  if (true) {
-    if (e.adType === admob.AD_TYPE.INTERSTITIAL) {
-      this.isAdsLoaded = true;
-      this.isContinueEnabled = true;
     }
   }
-}
 
-onAdClosed(e) {
-  if (true) {
-    if (e.adType === admob.AD_TYPE.INTERSTITIAL) {
-      admob.requestInterstitialAd();
+  onAdClosed(e) {
+    if (true) {
+      if (e.adType === admob.AD_TYPE.INTERSTITIAL) {
+        admob.requestInterstitialAd();
+      }
     }
   }
-}
 
-onPause() {
-  if (true) {
-    admob.destroyBannerView();
-  }
-}
-
-onResume() {
-  if (!true) {
-    setTimeout(admob.createBannerView, 1);
-    setTimeout(admob.requestInterstitialAd, 1);
-  }
-}
-
-// optional, in case respond to events
-registerAdEvents() {
-  document.addEventListener(admob.events.onAdLoaded, this.onAdLoaded);
-  document.addEventListener(admob.events.onAdClosed, this.onAdClosed);
-
-  document.addEventListener("pause", this.onPause, false);
-  document.addEventListener("resume", this.onResume, false);
-}
-
-initApp() {
-  
-}
-
-makeid(length): string
-{
-    let text = "";
-    let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-    for( var i=0; i < length; i++ ){
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
+  onPause() {
+    if (true) {
+      admob.destroyBannerView();
     }
+  }
 
-    return text;
-}
+  onResume() {
+    if (!true) {
+      setTimeout(admob.createBannerView, 1);
+      setTimeout(admob.requestInterstitialAd, 1);
+    }
+  }
+
+  // optional, in case respond to events
+  registerAdEvents() {
+    document.addEventListener(admob.events.onAdLoaded, this.onAdLoaded);
+    document.addEventListener(admob.events.onAdClosed, this.onAdClosed);
+
+    document.addEventListener("pause", this.onPause, false);
+    document.addEventListener("resume", this.onResume, false);
+  }
+
+  makeid(length): string
+  {
+      let text = "";
+      let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+      for( var i=0; i < length; i++ ){
+          text += possible.charAt(Math.floor(Math.random() * possible.length));
+      }
+
+      return text;
+  }
+
+  onSlowMotionEnabled(self: BallVsWildPage) {
+    self.timeMultiplier = 0.35;
+  }
+  onSlowMotionDisabled(self: BallVsWildPage) {
+    self.timeMultiplier = 1;
+  }
 
   ionViewDidEnter() {
 
@@ -726,13 +731,16 @@ makeid(length): string
     let margin = 0.1 * window.innerWidth;
     let yPosition = window.innerHeight - powerupHeight - 15;
     let powerups = [
-      new RadialShotBar(this, powerupWidth, powerupHeight, 150, margin, yPosition, "DOUBLE-TAP"),
-      new ShieldBar(this, powerupWidth, powerupHeight, 150, margin, yPosition, "DOUBLE-TAP")
+      new RadialShotBar(this, powerupWidth, powerupHeight, 150, margin, yPosition),
+      new ShieldBar(this, powerupWidth, powerupHeight, 150, margin, yPosition),
+      new SlowMotionBar(this, powerupWidth, powerupHeight, 150, this.onSlowMotionEnabled, this.onSlowMotionDisabled, this.canvasContext,
+        SlowMotionBar.DEFAULT_DURATION_MILLIS, margin, yPosition)
     ];
     let view = this.canvasContext.canvas;
     let dimensions = [
-      new SpriteDimensions(150, 300, 150, 150, view.width - this.buttonSize() - 10, 10 + 10 + 60 + this.buttonSize(), this.buttonSize(), this.buttonSize()),
-      new SpriteDimensions(0, 300, 150, 150, view.width - this.buttonSize() - 10, 10 + 60, this.buttonSize(), this.buttonSize())
+      new SpriteDimensions(150, 300, 150, 150, view.width - this.buttonSize() - 10, (3 * 10) + 60 + (2 * this.buttonSize()), this.buttonSize(), this.buttonSize()),
+      new SpriteDimensions(0, 300, 150, 150, view.width - this.buttonSize() - 10, (2 * 10) + 60 + this.buttonSize(), this.buttonSize(), this.buttonSize()),
+      new SpriteDimensions(0, 450, 150, 150, view.width - this.buttonSize() - 10, 10 + 60, this.buttonSize(), this.buttonSize())
     ];
     this.powerupSelector = new PowerupSelector(powerups, dimensions, this.spritesImg, this.canvasContext);
     this.powerupSelector.selectedIndex = 0;

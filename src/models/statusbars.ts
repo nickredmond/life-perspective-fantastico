@@ -87,10 +87,11 @@ export class PowerupBar {
 	isTextShowing: boolean = false;
 	millisSinceBlink: number = 0;
 	page: BallVsWildPage;
+	isUseEnabled: boolean = true;
 
 	constructor(width: number, height: number, maxPoints: number,
 			x: number = 0, y: number = 0, page: BallVsWildPage,
-			barFilledPhrase: string = "READY",
+			barFilledPhrase: string = "DOUBLE-TAP",
 			blinkRateMillis = PowerupBar.DEFAULT_BLINK_RATE) {
 		this.height = height;
 		this.width = width;
@@ -103,7 +104,7 @@ export class PowerupBar {
 	}
 
 	addPoints(points: number) {
-		if (this.currentPoints < this.maxPoints) {
+		if (this.currentPoints < this.maxPoints && this.isUseEnabled) {
 			let pointsToAdd = Math.min(this.pointsLeft(), points);
 			this.currentPoints += pointsToAdd;
 			if (this.currentPoints >= this.maxPoints){
@@ -222,7 +223,7 @@ export class PowerupSelector {
 
 export class ShieldBar extends PowerupBar {
 	constructor(page: BallVsWildPage, width: number, height: number, maxPoints: number,
-			x: number = 0, y: number = 0, barFilledPhrase: string = "READY",
+			x: number = 0, y: number = 0, barFilledPhrase: string = "DOUBLE-TAP",
 			blinkRateMillis = PowerupBar.DEFAULT_BLINK_RATE) {
 		super(width, height, maxPoints, x, y, page, barFilledPhrase, blinkRateMillis);
 	}
@@ -239,7 +240,7 @@ export class ShieldBar extends PowerupBar {
 
 export class RadialShotBar extends PowerupBar {
 	constructor(page: BallVsWildPage, width: number, height: number, maxPoints: number,
-			x: number = 0, y: number = 0, barFilledPhrase: string = "READY",
+			x: number = 0, y: number = 0, barFilledPhrase: string = "DOUBLE-TAP",
 			blinkRateMillis = PowerupBar.DEFAULT_BLINK_RATE) {
 		super(width, height, maxPoints, x, y, page, barFilledPhrase, blinkRateMillis);
 	}
@@ -268,6 +269,68 @@ export class RadialShotBar extends PowerupBar {
 			nextProjectile.velocityY = yVelocityRatio * BallVsWildPage.MIN_SHOT_VELOCITY;
 
 			this.page.projectiles.push(nextProjectile);
+		}
+	}
+}
+
+export class SlowMotionBar extends PowerupBar {
+	static readonly DEFAULT_DURATION_MILLIS: number = 8000;
+
+	onSlowMotionEnabled: Function;
+	onSlowMotionDisabled: Function;
+	durationMillis: number = 0;
+	isSlowMotionBar: boolean = true;
+	ctx: CanvasRenderingContext2D;
+	page: BallVsWildPage;
+
+	constructor(page: BallVsWildPage, width: number, height: number, maxPoints: number,
+			onSlowMotionEnabled: Function, onSlowMotionDisabled: Function,
+			ctx: CanvasRenderingContext2D,
+			durationMillis: number = SlowMotionBar.DEFAULT_DURATION_MILLIS,
+			x: number = 0, y: number = 0, barFilledPhrase: string = "DOUBLE-TAP",
+			blinkRateMillis = PowerupBar.DEFAULT_BLINK_RATE) {
+		super(width, height, maxPoints, x, y, page, barFilledPhrase, blinkRateMillis);
+		this.onSlowMotionEnabled = onSlowMotionEnabled;
+		this.onSlowMotionDisabled = onSlowMotionDisabled;
+		this.durationMillis = durationMillis;
+		this.ctx = ctx;
+		this.page = page;
+	}
+
+	expend() {
+		if (this.isPowerupEnabled()) {
+			this.onSlowMotionEnabled(this.page);
+			this.isUseEnabled = false;
+			let timer = (<HTMLSpanElement>document.getElementById("timer"));
+			timer.style.display = "block";
+
+			this.clearBar();
+			let self = this;
+			let totalMillis = 0;
+			let millisSinceSet = 0;
+			let isTextSet = false;
+			let useInterval = setInterval(function(){
+				totalMillis += 20;
+				millisSinceSet += 20;
+				let actualSecondsLeft = (self.durationMillis - totalMillis) / 1000;
+				let timeLeftSeconds = Math.ceil(actualSecondsLeft);
+				let opacity = 1 - (timeLeftSeconds - actualSecondsLeft);
+
+				timer.style.opacity = opacity.toString();
+				if (millisSinceSet >= 1000 || !isTextSet) {
+					timer.innerHTML = timeLeftSeconds + " sec.";
+					millisSinceSet = 0;
+					isTextSet = true;
+				}
+			}, 20);
+			setTimeout(function(){
+				self.onSlowMotionDisabled(self.page);
+				self.isUseEnabled = true;
+				(<HTMLSpanElement>document.getElementById("timer")).style.display = "none";
+				clearInterval(useInterval);
+			}, this.durationMillis);
+		} else {
+			this.throwPrematureExpendError();
 		}
 	}
 }
