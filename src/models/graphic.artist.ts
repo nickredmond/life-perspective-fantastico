@@ -1,4 +1,5 @@
 import { BallVsWildPage } from "../pages/ball-vs-wild/ball-vs-wild";
+import { StringTools } from "./stringtools";
 
 export class GraphicArtist {
 	static drawHighScores(page: BallVsWildPage, ctx: CanvasRenderingContext2D,
@@ -32,7 +33,8 @@ export class GraphicArtist {
           return result;
         });
         for (var i = 0; i < scores.length; i++) {
-          ctx.fillText(scores[i]["name"], leftMargin, topY + 25 + (25 * i));
+          let text = StringTools.instance().censorText(scores[i]["name"]);
+          ctx.fillText(text, leftMargin, topY + 25 + (25 * i));
         }
 
         ctx.textAlign = "right";
