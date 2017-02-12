@@ -1,5 +1,5 @@
 export class StringTools {
-	static readonly PROFANITY_REGEX: string = "[!@#$%^&*]*((bull|horse)?shit(s+|t(y+|ier)|head[s]*)?|(bitch(e([s]+|d|ry))?|asshole[s]*|fucker([y]*|[s]*)|fuckin(g)?|fuck[s]*|cunt(y|s)*|whore(s+|d)?)[!@#$%^&*]*)+";
+	static readonly PROFANITY_REGEX: string = "[!@#$%^&*]*(faggot[s]*|(bull|horse)?shit(s+|t(y+|ier)|head[s]*)?|(bitch(e([s]+|d|ry))?|asshole[s]*|fucker([y]*|[s]*)|fuckin(g)?|fuck[s]*|cunt(y|s)*|whore(s+|d)?)[!@#$%^&*]*)+";
 
 	private pattern: RegExp;
 	private isTypeSafe: boolean;
