@@ -67,3 +67,17 @@ page-ball-vs-wild {
     text-align: center;
     width: 80%;
 }
+
+#timer {
+	background-color: transparent;
+	position: absolute;
+	z-index: 1000;
+	width: 80%;
+	left: 10%;
+	top: 90%;
+	display: none;
+	color: white;
+	text-align: center;
+	font: 24px Courier;
+	font-weight: bold;
+}
