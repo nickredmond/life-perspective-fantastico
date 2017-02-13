@@ -105,6 +105,7 @@ export class BallVsWildPage {
   millisUntilDoom: number = 0;
   rickRoller: RickRollManager = new RickRollManager();
   timeMultiplier: number = 1;
+  isViewRefreshed: boolean = false;
 
   static readonly DAILY_LEADERBOARD_NAME: string = "today";
   static readonly ALL_TIME_LEADERBOARD_NAME: string = "allTime";
@@ -239,19 +240,14 @@ export class BallVsWildPage {
   gameTick(dtMillis: number){
     let dtMillisFinal = this.timeMultiplier * dtMillis;
     this.rickRoller.update(dtMillisFinal);
-    //this.rickRoller.draw(this.canvasContext);
 
     if (!this.pauseButton.isPaused()) {
       this.updateFrame(dtMillisFinal);
     }
-
-    //this.powerupSelector.draw();
-    //this.pauseButton.draw(this.canvasContext);
-
-    // if (this.hero){
-    //   this.hero.draw(this.canvasContext);
-    // }
-    //this.healthBar.draw(this.canvasContext);
+    if (!this.isViewRefreshed){
+      this.renderer.redraw();
+      this.isViewRefreshed = true;
+    }
 
     let ctx = this.renderer.fgContext;
     let scoreX = ctx.canvas.width - 15;
@@ -332,7 +328,6 @@ export class BallVsWildPage {
       }
       else {
         projectile.update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-        //projectile.draw(this.canvasContext);
       }
     }
     this.items = this.items.filter(function(item){
@@ -347,7 +342,6 @@ export class BallVsWildPage {
       }
       else {
         item.update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-        //item.draw(this.canvasContext);
       }
     }
     this.enemies = this.enemies.filter(function(enemy){
@@ -368,6 +362,7 @@ export class BallVsWildPage {
           });
           this.renderer.suspendForeground();
           this.renderer.suspendBackground();
+          this.isViewRefreshed = false;
 
           this.isEnemiesGoingBallistic = false;
           this.millisUntilDoom = BallVsWildPage.WAVELENGTH_MILLIS;
@@ -389,7 +384,6 @@ export class BallVsWildPage {
       }
       else {
         enemy.update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-        //enemy.draw(this.canvasContext);
       }
     }
 
@@ -604,6 +598,18 @@ export class BallVsWildPage {
     if (this.isHighScoresDisplayed && !this.isHighScore){
       this.healthBar.healthPoints = HealthBar.DEFAULT_MAX_HP;
       this.powerupSelector.clearBars();
+
+      let renderer = this.renderer;
+      this.projectiles.forEach(function(projectile){
+        renderer.removeBackgroundObject(projectile);
+      });
+      this.items.forEach(function(item){
+        renderer.removeBackgroundObject(item);
+      });
+      this.enemies.forEach(function(enemy){
+        renderer.removeBackgroundObject(enemy);
+      });
+
       this.projectiles = [];
       this.items = [];
       this.enemies = [];

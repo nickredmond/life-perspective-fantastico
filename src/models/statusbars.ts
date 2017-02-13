@@ -136,6 +136,7 @@ export class PowerupBar extends DrawableObject {
 					(this.millisSinceBlink >= (0.5 * this.blinkRateMillis) && this.isTextShowing === false)) {
 				this.isTextShowing = !this.isTextShowing;
 				this.millisSinceBlink = 0;
+				this.page.renderer.redrawForeground();
 			}
 		}
 	}
@@ -273,6 +274,7 @@ export class RadialShotBar extends PowerupBar {
 			nextProjectile.velocityY = yVelocityRatio * BallVsWildPage.MIN_SHOT_VELOCITY;
 
 			this.page.projectiles.push(nextProjectile);
+			this.page.renderer.addBackgroundObject(nextProjectile);
 		}
 	}
 }
