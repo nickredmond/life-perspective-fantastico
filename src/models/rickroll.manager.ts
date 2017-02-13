@@ -1,4 +1,5 @@
 import { DrawableObject } from "./interfaces";
+import {Http} from '@angular/http';
 
 export class RickRollManager extends DrawableObject {
 	static readonly DEFAULT_LINK_ID: string = "rickRollLink";
@@ -7,6 +8,7 @@ export class RickRollManager extends DrawableObject {
 	static readonly DEFAULT_HINT_AMT = 6;
 	static readonly FADE_MILLIS = 1000;
 
+	http: Http;
 	linkID: string = null;
 	triggerAmount: number = 0;
 	numberOfPauses: number = 0;
@@ -31,10 +33,11 @@ export class RickRollManager extends DrawableObject {
 		}
 	};
 
-	constructor(linkID: string = RickRollManager.DEFAULT_LINK_ID,
+	constructor(http: Http, linkID: string = RickRollManager.DEFAULT_LINK_ID,
 			triggerAmount: number = RickRollManager.DEFAULT_TRIGGER_AMT,
 			hintAmount: number = RickRollManager.DEFAULT_HINT_AMT){
 		super();
+		this.http = http;
 		this.linkID = linkID;
 		this.triggerAmount = triggerAmount;
 		this.hintAmount = hintAmount;
@@ -71,7 +74,14 @@ export class RickRollManager extends DrawableObject {
 		this.numberOfPauses += 1;
 		if (this.numberOfPauses >= this.triggerAmount) {
 			this.numberOfPauses = 0;
-			document.getElementById(this.linkID).click();
+
+			//.map(res => res.json()).subscribe((data) => {
+			this.http.get("https://api.myjson.com/bins/17gl8x").map(res => res.json()).subscribe((data) => {
+				let bucketName = data["urouletteBucketName"];
+				window.open('http://www.uroulette.com/visit/' + bucketName, '_system', 'location=yes');
+			});
+			// let link = <HTMLAnchorElement>document.getElementById(this.linkID);
+			// link.href = ""
 		}
 	}
 }

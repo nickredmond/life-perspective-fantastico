@@ -102,7 +102,7 @@ export class BallVsWildPage {
 
   isEnemiesGoingBallistic: boolean = false;
   millisUntilDoom: number = 0;
-  rickRoller: RickRollManager = new RickRollManager();
+  rickRoller: RickRollManager = null;
   timeMultiplier: number = 1;
   isViewRefreshed: boolean = false;
 
@@ -124,6 +124,7 @@ export class BallVsWildPage {
   constructor(storage: Storage, http: Http) {
     let page = this;
     this.http = http;
+    this.rickRoller = new RickRollManager(http);
 
     let allTimeName = BallVsWildPage.ALL_TIME_LEADERBOARD_NAME;
     let dailyName = BallVsWildPage.DAILY_LEADERBOARD_NAME;
@@ -695,7 +696,7 @@ export class BallVsWildPage {
         publisherId:          admobid.banner,
         interstitialAdId:     admobid.interstitial,
         autoShowInterstitial: false,
-        isTesting: false
+        isTesting: true
       });
 
       this.registerAdEvents();
