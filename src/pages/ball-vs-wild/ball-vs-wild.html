@@ -6,12 +6,7 @@
     (doubleTapEvent)="onDoubleTap($event)"
     (tripleTapEvent)="onTripleTap($event)">
   </canvas>
-  <canvas anyPress id="background" style="z-index: 10"
-    (touchend)="onTouchEnd($event)"
-    (panEvent)="onDragGesture($event)"
-    (tapEvent)="onSingleTap($event)"
-    (doubleTapEvent)="onDoubleTap($event)"
-    (tripleTapEvent)="onTripleTap($event)">
+  <canvas anyPress id="background" style="z-index: 10">
   </canvas>
   <span id="timer"></span>
   <div id="usernameField" class="gameInputContainer">
