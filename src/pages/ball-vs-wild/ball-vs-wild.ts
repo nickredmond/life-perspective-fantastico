@@ -11,6 +11,7 @@ import { Dimensions, SpriteDimensions } from "../../models/dimensions";
 import { GraphicArtist } from "../../models/graphic.artist";
 import { RickRollManager } from "../../models/rickroll.manager";
 import { RenderingEngine } from "../../models/engine.rendering";
+import {EffectsManager } from "../../models/effects.manager";
 
 declare var admob;
 
@@ -74,6 +75,7 @@ export class BallVsWildPage {
   enemies: Enemy[] = [];
   enemyGenerators: EnemyProducer[] = [];
   itemGenerators: ItemProducer[] = [];
+  effectsMgr: EffectsManager = null;
 
   spritesImg: HTMLImageElement;
   //canvasContext: CanvasRenderingContext2D = null;
@@ -105,6 +107,11 @@ export class BallVsWildPage {
   rickRoller: RickRollManager = null;
   timeMultiplier: number = 1;
   isViewRefreshed: boolean = false;
+  millisSinceTap: number = 0;
+  facts: string[] = [];
+  factsTaken: string[] = [];
+  factIndicesTaken: number[] = [];
+  fact: string = null;
 
   static readonly DAILY_LEADERBOARD_NAME: string = "today";
   static readonly ALL_TIME_LEADERBOARD_NAME: string = "allTime";
@@ -125,6 +132,12 @@ export class BallVsWildPage {
     let page = this;
     this.http = http;
     this.rickRoller = new RickRollManager(http);
+
+    this.http.get('https://api.myjson.com/bins/17gl8x').map(res => res.json()).subscribe(
+      (data) => {
+        page.facts = data["facts"];
+      }
+    );
 
     let allTimeName = BallVsWildPage.ALL_TIME_LEADERBOARD_NAME;
     let dailyName = BallVsWildPage.DAILY_LEADERBOARD_NAME;
@@ -158,14 +171,16 @@ export class BallVsWildPage {
 
             if (self.healthBar.healthPoints > 0){
               self.gameTick(dtMilliseconds);
+              if (!self.renderer.isInBackground(self.effectsMgr)){
+                self.renderer.addBackgroundObject(self.effectsMgr);
+              }
               self.renderer.redrawBackground();
             }
             else if (self.isHighScoresDisplayed) {
+              self.renderer.resume();
+              self.renderer.redraw();
+              self.renderer.suspend();
               if (self.userName || !self.isHighScore){
-                self.renderer.resume();
-                self.renderer.redraw();
-                self.renderer.suspend();
-
                 let centerX = ctx.canvas.width / 2;
                 let allTimeScores = self.highScores[BallVsWildPage.ALL_TIME_LEADERBOARD_NAME];
                 let dailyScores = self.highScores[BallVsWildPage.DAILY_LEADERBOARD_NAME];
@@ -175,19 +190,23 @@ export class BallVsWildPage {
                   centerX, ctx.canvas.height * 0.45, true);
               }
               else {
-                self.renderer.resume();
-                self.renderer.redraw();
-                self.renderer.suspend();
                 document.getElementById("usernameField").style.display = "block";
               }
             }
             else{
+              self.renderer.resume();
+              self.renderer.redraw();
+              self.renderer.suspend();
+
               let centerX = ctx.canvas.width / 2;
-              let centerY = ctx.canvas.height / 2;
+              let centerY = ctx.canvas.height * 0.4;
 
               if (ctx.font != "30px Courier" || ctx.textAlign != "center") {
                 ctx.font = "30px Courier";
                 ctx.textAlign = "center";
+              }
+              if (ctx.fillStyle != "white"){
+                ctx.fillStyle = "white";
               }
               ctx.fillText("You have died.", centerX, centerY - 20);
               ctx.fillText("SCORE: " + self.score, centerX, centerY + 15);
@@ -196,6 +215,21 @@ export class BallVsWildPage {
                 ctx.font = "18px Courier";
                 ctx.fillText("(Tap to continue)", centerX, centerY + 50);
               }
+
+              if (!self.fact) {
+                if (self.facts.length === 0) {
+                  self.facts = self.factsTaken;
+                }
+
+                let randomIndex = Math.floor(Math.random() * self.facts.length);
+                let f = self.facts.splice(randomIndex, 1)[0];
+                self.factsTaken.push(f);
+                self.fact = f;
+              }
+
+              let maxWidth = self.renderer.fgContext.canvas.width * 0.9;
+              let height = self.renderer.fgContext.canvas.height * 0.7;
+              GraphicArtist.wrapText(ctx, "DID YOU KNOW: " + self.fact, centerX, height, maxWidth, 18);
             }
 
             self.millisUntilNextAd -= dtMilliseconds;
@@ -238,7 +272,9 @@ export class BallVsWildPage {
 
   gameTick(dtMillis: number){
     let dtMillisFinal = this.timeMultiplier * dtMillis;
+    this.millisSinceTap += dtMillisFinal;
     this.rickRoller.update(dtMillisFinal);
+    this.effectsMgr.update(dtMillisFinal);
 
     if (!this.pauseButton.isPaused()) {
       this.updateFrame(dtMillisFinal);
@@ -402,58 +438,11 @@ export class BallVsWildPage {
             this.explodeLargeBee(this.enemies[j]);
           }
           this.strikeEnemy(this.enemies[j], this.projectiles[k]);
-        } else {
-          let offsetX = this.enemies[j].positionX;
-          let offsetY = this.enemies[j].positionY;
-          let x2 = this.projectiles[k].positionX + offsetX;
-          let y2 = this.projectiles[k].positionY + offsetY;
-
-          this.projectiles[k].reverseFrame(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-          let x1 = this.projectiles[k].positionX + offsetX;
-          let y1 = this.projectiles[k].positionY + offsetY;
-
-          let dx_squared = Math.pow(x2 - x1, 2);
-          let dy_squared = Math.pow(y2 - y1, 2);
-          let dr = Math.sqrt(dx_squared + dy_squared);
-          let D = (x1 * y2) - (x2 * y1);
-          let discriminant = (Math.pow(this.enemies[j].size, 2) * Math.pow(dr, 2)) - Math.pow(D, 2);
-          let isIntersection = (discriminant >= 0);
-
-          if (isIntersection) {
-            if (this.enemies[j].name === BallVsWildPage.LARGE_BEE["name"]){
-              this.explodeLargeBee(this.enemies[j]);
-            }
-            this.strikeEnemy(this.enemies[j], this.projectiles[k]);
-          } else {
-            this.projectiles[k].update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-          }
         }
       }
       for (var j = 0; j < this.items.length; j++){
         if (this.items[j].intersects(this.projectiles[k])){
           this.strikeItem(this.items[j], this.projectiles[k]);
-        } else {
-          let offsetX = this.items[j].positionX;
-          let offsetY = this.items[j].positionY;
-          let x2 = this.projectiles[k].positionX + offsetX;
-          let y2 = this.projectiles[k].positionY + offsetY;
-
-          this.projectiles[k].reverseFrame(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-          let x1 = this.projectiles[k].positionX + offsetX;
-          let y1 = this.projectiles[k].positionY + offsetY;
-
-          let dx_squared = Math.pow(x2 - x1, 2);
-          let dy_squared = Math.pow(y2 - y1, 2);
-          let dr = Math.sqrt(dx_squared + dy_squared);
-          let D = (x1 * y2) - (x2 * y1);
-          let discriminant = (Math.pow(this.items[j].size, 2) * Math.pow(dr, 2)) - Math.pow(D, 2);
-          let isIntersection = (discriminant >= 0);
-
-          if (isIntersection) {
-            this.strikeItem(this.items[j], this.projectiles[k]);
-          } else {
-            this.projectiles[k].update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-          }
         }
       }
     }
@@ -623,25 +612,12 @@ export class BallVsWildPage {
       this.enemies = [];
       this.score = 0;
       this.isHighScoresDisplayed = false;
+      this.fact = null;
 
       this.renderer.resume();
       this.renderer.redraw();
     } else if (this.healthBar.healthPoints === 0 && this.millisUntilNextAd <= BallVsWildPage.MILLIS_BETWEEN_ADS - 2200) {
       this.isHighScoresDisplayed = true;
-    }
-    else if (this.maxVelocity > 0 && this.millisSinceLastShot >= 200) {
-      let velocityScale = BallVsWildPage.MIN_SHOT_VELOCITY / Math.abs(this.maxVelocity);
-
-      let size = Math.max(10, this.renderer.bgContext.canvas.width * 0.04);
-      let nextProjectile = new ShapeUnit(this.projectileShape, this.hero.positionX, this.hero.positionY,
-        size, BallVsWildPage.PROJECTILE_COLOR);
-      nextProjectile.velocityX = (velocityScale > 1) ? (this.maxVelocityX * velocityScale) : this.maxVelocityX;
-      nextProjectile.velocityY = (velocityScale > 1) ? (this.maxVelocityY * velocityScale) : this.maxVelocityY;
-      this.projectiles.push(nextProjectile);
-      this.renderer.addBackgroundObject(nextProjectile);
-
-      this.maxVelocity = 0;
-      this.millisSinceLastShot = 0;
     }
   }
   onDoubleTap(event) {
@@ -652,23 +628,48 @@ export class BallVsWildPage {
     }
   }
   onSingleTap(event) {
-    let centerX = event.center.x;
-    let centerY = event.center.y;
-    let self = this;
-    this.powerupSelector.dimensions.forEach(function(dimension, index){
-      if (dimension.dx < centerX && centerX < dimension.dx + dimension.dWidth &&
-          dimension.dy < centerY && centerY < dimension.dy + dimension.dHeight) {
-        self.powerupSelector.selectedIndex = index;
-        self.renderer.redrawForeground();
+    if (this.millisSinceTap >= 200) {
+      this.millisSinceTap = 0;
+      let centerX = event.center.x;
+      let centerY = event.center.y;
+      let self = this;
+      let isButtonPressed = false;
+
+      this.powerupSelector.dimensions.forEach(function(dimension, index){
+        if (dimension.dx < centerX && centerX < dimension.dx + dimension.dWidth &&
+            dimension.dy < centerY && centerY < dimension.dy + dimension.dHeight) {
+          isButtonPressed = true;
+          self.powerupSelector.selectedIndex = index;
+          self.renderer.redrawForeground();
+        }
+      });
+      let btn = this.pauseButton.location;
+      if (btn.x < centerX && centerX < btn.x + btn.width &&
+          btn.y < centerY && centerY < btn.y + btn.height) {
+        isButtonPressed = true;
+        this.pauseButton.togglePause();
+        this.renderer.redrawForeground();
+        if (this.pauseButton.isPaused()) {
+          this.rickRoller.onPaused();
+        }
       }
-    });
-    let btn = this.pauseButton.location;
-    if (btn.x < centerX && centerX < btn.x + btn.width &&
-        btn.y < centerY && centerY < btn.y + btn.height) {
-      this.pauseButton.togglePause();
-      this.renderer.redrawForeground();
-      if (this.pauseButton.isPaused()) {
-        this.rickRoller.onPaused();
+      if (!isButtonPressed && this.millisSinceLastShot >= 200) {
+        let distance = ExtendedMath.distance(this.hero.positionX, this.hero.positionY, centerX, centerY);
+        let velocityScale = BallVsWildPage.MIN_SHOT_VELOCITY / distance;
+        let distanceX = velocityScale * (centerX - this.hero.positionX);
+        let distanceY = velocityScale * (centerY - this.hero.positionY);
+
+        let size = Math.max(10, this.renderer.bgContext.canvas.width * 0.04);
+        let nextProjectile = new ShapeUnit(this.projectileShape, this.hero.positionX, this.hero.positionY,
+          size, BallVsWildPage.PROJECTILE_COLOR);
+        nextProjectile.velocityX = distanceX; // (velocityScale > 1) ? (distanceX * velocityScale) : this.maxVelocityX;
+        nextProjectile.velocityY = distanceY; // (velocityScale > 1) ? (distanceY * velocityScale) : this.maxVelocityY;
+        this.projectiles.push(nextProjectile);
+        this.renderer.addBackgroundObject(nextProjectile);
+        this.effectsMgr.startTouchEffect(centerX, centerY);
+
+        this.maxVelocity = 0;
+        this.millisSinceLastShot = 0;
       }
     }
   }
@@ -696,7 +697,7 @@ export class BallVsWildPage {
         publisherId:          admobid.banner,
         interstitialAdId:     admobid.interstitial,
         autoShowInterstitial: false,
-        isTesting: true
+        isTesting: false
       });
 
       this.registerAdEvents();
@@ -822,6 +823,8 @@ export class BallVsWildPage {
     this.renderer.redrawForeground();
 
     this.millisUntilDoom = BallVsWildPage.WAVELENGTH_MILLIS;
+    this.effectsMgr = new EffectsManager(this.renderer.bgContext);
+    this.renderer.addBackgroundObject(this.effectsMgr);
 
     this.initAds();
     admob.requestInterstitialAd();
