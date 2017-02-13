@@ -261,7 +261,7 @@ export class RadialShotBar extends PowerupBar {
 	private executeRadialShot() {
 		let startingDegrees = Math.random() * 360;
 		let startingRadians = ExtendedMath.toRadians(startingDegrees);
-		let size = Math.max(10, this.page.canvasContext.canvas.width * 0.04);
+		let size = Math.max(10, this.page.renderer.bgContext.canvas.width * 0.04);
 
 		for (var i = 0; i < 8; i++) {
 			let radians = startingRadians + (BallVsWildPage.RADIANS_PER_PROJECTILE * i);
@@ -284,12 +284,10 @@ export class SlowMotionBar extends PowerupBar {
 	onSlowMotionDisabled: Function;
 	durationMillis: number = 0;
 	isSlowMotionBar: boolean = true;
-	ctx: CanvasRenderingContext2D;
 	page: BallVsWildPage;
 
 	constructor(page: BallVsWildPage, width: number, height: number, maxPoints: number,
 			onSlowMotionEnabled: Function, onSlowMotionDisabled: Function,
-			ctx: CanvasRenderingContext2D,
 			durationMillis: number = SlowMotionBar.DEFAULT_DURATION_MILLIS,
 			x: number = 0, y: number = 0, barFilledPhrase: string = "DOUBLE-TAP",
 			blinkRateMillis = PowerupBar.DEFAULT_BLINK_RATE) {
@@ -297,7 +295,6 @@ export class SlowMotionBar extends PowerupBar {
 		this.onSlowMotionEnabled = onSlowMotionEnabled;
 		this.onSlowMotionDisabled = onSlowMotionDisabled;
 		this.durationMillis = durationMillis;
-		this.ctx = ctx;
 		this.page = page;
 	}
 

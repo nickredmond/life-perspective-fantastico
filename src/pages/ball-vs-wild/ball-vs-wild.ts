@@ -149,18 +149,23 @@ export class BallVsWildPage {
     setInterval((
       function(self, dtMilliseconds){
         return function() {
-          if (self.canvasContext){
-            let ctx = self.canvasContext;
+          if (self.renderer){
+            let ctx = self.renderer.fgContext;
             if (ctx.fillStyle != "white") {
               ctx.fillStyle = "white";
             }
-            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
             if (self.healthBar.healthPoints > 0){
               self.gameTick(dtMilliseconds);
+              console.log("huh")
+              self.renderer.redrawBackground();
             }
             else if (self.isHighScoresDisplayed) {
               if (self.userName || !self.isHighScore){
+                self.renderer.resume();
+                self.renderer.redraw();
+                self.renderer.suspend();
+
                 let centerX = ctx.canvas.width / 2;
                 let allTimeScores = self.highScores[BallVsWildPage.ALL_TIME_LEADERBOARD_NAME];
                 let dailyScores = self.highScores[BallVsWildPage.DAILY_LEADERBOARD_NAME];
@@ -170,6 +175,9 @@ export class BallVsWildPage {
                   centerX, ctx.canvas.height * 0.45, true);
               }
               else {
+                self.renderer.resume();
+                self.renderer.redraw();
+                self.renderer.suspend();
                 document.getElementById("usernameField").style.display = "block";
               }
             }
@@ -231,21 +239,21 @@ export class BallVsWildPage {
   gameTick(dtMillis: number){
     let dtMillisFinal = this.timeMultiplier * dtMillis;
     this.rickRoller.update(dtMillisFinal);
-    this.rickRoller.draw(this.canvasContext);
+    //this.rickRoller.draw(this.canvasContext);
 
     if (!this.pauseButton.isPaused()) {
       this.updateFrame(dtMillisFinal);
     }
 
-    this.powerupSelector.draw();
-    this.pauseButton.draw(this.canvasContext);
+    //this.powerupSelector.draw();
+    //this.pauseButton.draw(this.canvasContext);
 
-    if (this.hero){
-      this.hero.draw(this.canvasContext);
-    }
-    this.healthBar.draw(this.canvasContext);
+    // if (this.hero){
+    //   this.hero.draw(this.canvasContext);
+    // }
+    //this.healthBar.draw(this.canvasContext);
 
-    let ctx = this.canvasContext;
+    let ctx = this.renderer.fgContext;
     let scoreX = ctx.canvas.width - 15;
 
     if (ctx.font != "18px Courier") {
@@ -260,7 +268,7 @@ export class BallVsWildPage {
     ctx.fillText(this.score.toString(), scoreX, 60);
 
     if (this.pauseButton.isPaused()) {
-      let ctx = this.canvasContext;
+      let ctx = this.renderer.fgContext;
       if (ctx.fillStyle != "white") {
         ctx.fillStyle = "white";
       }
@@ -299,27 +307,32 @@ export class BallVsWildPage {
       let enemy = <Enemy>this.enemyGenerators[i].tick(dtMilliseconds);
       if (enemy != null){
         this.enemies.push(enemy);
+        this.renderer.addBackgroundObject(enemy);
       }
     }
     for (var i = 0; i < this.itemGenerators.length; i++){
       let item = <ImageUnit>this.itemGenerators[i].tick(dtMilliseconds);
       if (item != null){
         this.items.push(item);
+        this.renderer.addBackgroundObject(item);
       }
     }
 
     this.projectiles = this.projectiles.filter(function(proj){
       return proj.isAlive;
     });
+
+    let bgContext = this.renderer.bgContext;
     for (var i = 0; i < this.projectiles.length; i++){
       let projectile = this.projectiles[i];
-      if (projectile.positionX < -projectile.size || projectile.positionX > (this.canvasContext.canvas.width + projectile.size) ||
-            projectile.positionY < -projectile.size || projectile.positionY > (this.canvasContext.canvas.height + projectile.size)){
+      if (projectile.positionX < -projectile.size || projectile.positionX > (bgContext.canvas.width + projectile.size) ||
+            projectile.positionY < -projectile.size || projectile.positionY > (bgContext.canvas.height + projectile.size)){
         projectile.isAlive = false;
+        this.renderer.removeBackgroundObject(projectile);
       }
       else {
         projectile.update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-        projectile.draw(this.canvasContext);
+        //projectile.draw(this.canvasContext);
       }
     }
     this.items = this.items.filter(function(item){
@@ -327,13 +340,14 @@ export class BallVsWildPage {
     });
     for (var i = 0; i < this.items.length; i++){
       let item = this.items[i];
-      if (item.positionX < -item.size || item.positionX > (this.canvasContext.canvas.width + item.size) ||
-            item.positionY < -item.size || item.positionY > (this.canvasContext.canvas.height + item.size)){
+      if (item.positionX < -item.size || item.positionX > (bgContext.canvas.width + item.size) ||
+            item.positionY < -item.size || item.positionY > (bgContext.canvas.height + item.size)){
         item.isAlive = false;
+        this.renderer.removeBackgroundObject(item);
       }
       else {
         item.update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-        item.draw(this.canvasContext);
+        //item.draw(this.canvasContext);
       }
     }
     this.enemies = this.enemies.filter(function(enemy){
@@ -352,6 +366,8 @@ export class BallVsWildPage {
             enemyGenerator.totalGameTimeMillis = 0;
             enemyGenerator.resetSpawnRate();
           });
+          this.renderer.suspendForeground();
+          this.renderer.suspendBackground();
 
           this.isEnemiesGoingBallistic = false;
           this.millisUntilDoom = BallVsWildPage.WAVELENGTH_MILLIS;
@@ -367,11 +383,13 @@ export class BallVsWildPage {
           this.checkHighScore(BallVsWildPage.ALL_TIME_LEADERBOARD_NAME);
         }
         this.healthBar.takeHealth();
+        this.renderer.redrawForeground();
         enemy.isAlive = false;
+        this.renderer.removeBackgroundObject(enemy);
       }
       else {
         enemy.update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-        enemy.draw(this.canvasContext);
+        //enemy.draw(this.canvasContext);
       }
     }
 
@@ -536,31 +554,39 @@ export class BallVsWildPage {
         itemMini.velocityX = (2 * Math.random() * page.MIN_SHOT_VELOCITY) - page.MIN_SHOT_VELOCITY;
         itemMini.velocityY = (2 * Math.random() * page.MIN_SHOT_VELOCITY) - page.MIN_SHOT_VELOCITY;
         this.items.push(<ImageUnit>itemMini);
+        this.renderer.addBackgroundObject(<ImageUnit>itemMini);
       }
     }
     else {
-      let size = Math.max(15, this.canvasContext.canvas.width * 0.06);
+      let size = Math.max(15, this.renderer.bgContext.canvas.width * 0.06);
       for (var i = 0; i < 4; i++){
         let enemyMini = new Enemy(5, this.spritesImg ,page.MINI_BEE["leftDimensions"], page.MINI_BEE["rightDimensions"],
           enemy.positionX, enemy.positionY, size, page.MINI_BEE["name"]);
         enemyMini.velocityX = (2 * Math.random() * page.MIN_SHOT_VELOCITY) - page.MIN_SHOT_VELOCITY;
         enemyMini.velocityY = (2 * Math.random() * page.MIN_SHOT_VELOCITY) - page.MIN_SHOT_VELOCITY;
         this.enemies.push(<Enemy>enemyMini);
+        this.renderer.addBackgroundObject(<ImageUnit>enemyMini);
       }
     }
   }
   private strikeEnemy(enemy: Enemy, projectile: ShapeUnit) {
     this.score += enemy.value;
     this.powerupSelector.powerupBars[this.powerupSelector.selectedIndex].addPoints(enemy.value);
+    this.renderer.redrawForeground();
     enemy.isAlive = false;
     projectile.isAlive = false;
+    this.renderer.removeBackgroundObject(enemy);
+    this.renderer.removeBackgroundObject(projectile);
   }
   private strikeItem(item: ImageUnit, projectile: ShapeUnit) {
     // TODO: refactor to be extensible for other item types
     this.score += 5;
     this.healthBar.giveHealth();
+    this.renderer.redrawForeground();
     item.isAlive = false;
     projectile.isAlive = false;
+    this.renderer.removeBackgroundObject(item);
+    this.renderer.removeBackgroundObject(projectile);
   }
 
   onDragGesture(event){
@@ -583,18 +609,22 @@ export class BallVsWildPage {
       this.enemies = [];
       this.score = 0;
       this.isHighScoresDisplayed = false;
+
+      this.renderer.resume();
+      this.renderer.redraw();
     } else if (this.healthBar.healthPoints === 0 && this.millisUntilNextAd <= BallVsWildPage.MILLIS_BETWEEN_ADS - 2200) {
       this.isHighScoresDisplayed = true;
     }
     else if (this.maxVelocity > 0 && this.millisSinceLastShot >= 200) {
       let velocityScale = BallVsWildPage.MIN_SHOT_VELOCITY / Math.abs(this.maxVelocity);
 
-      let size = Math.max(10, this.canvasContext.canvas.width * 0.04);
+      let size = Math.max(10, this.renderer.bgContext.canvas.width * 0.04);
       let nextProjectile = new ShapeUnit(this.projectileShape, this.hero.positionX, this.hero.positionY,
         size, BallVsWildPage.PROJECTILE_COLOR);
       nextProjectile.velocityX = (velocityScale > 1) ? (this.maxVelocityX * velocityScale) : this.maxVelocityX;
       nextProjectile.velocityY = (velocityScale > 1) ? (this.maxVelocityY * velocityScale) : this.maxVelocityY;
       this.projectiles.push(nextProjectile);
+      this.renderer.addBackgroundObject(nextProjectile);
 
       this.maxVelocity = 0;
       this.millisSinceLastShot = 0;
@@ -604,6 +634,7 @@ export class BallVsWildPage {
     let selectedPowerup = this.powerupSelector.powerupBars[this.powerupSelector.selectedIndex];
     if (selectedPowerup.isPowerupEnabled()) {
       selectedPowerup.expend();
+      this.renderer.redrawForeground();
     }
   }
   onSingleTap(event) {
@@ -614,12 +645,14 @@ export class BallVsWildPage {
       if (dimension.dx < centerX && centerX < dimension.dx + dimension.dWidth &&
           dimension.dy < centerY && centerY < dimension.dy + dimension.dHeight) {
         self.powerupSelector.selectedIndex = index;
+        self.renderer.redrawForeground();
       }
     });
     let btn = this.pauseButton.location;
     if (btn.x < centerX && centerX < btn.x + btn.width &&
         btn.y < centerY && centerY < btn.y + btn.height) {
       this.pauseButton.togglePause();
+      this.renderer.redrawForeground();
       if (this.pauseButton.isPaused()) {
         this.rickRoller.onPaused();
       }
@@ -627,7 +660,7 @@ export class BallVsWildPage {
   }
 
   private buttonSize() {
-    return Math.max(40, this.canvasContext.canvas.width * 0.16);
+    return Math.max(40, this.renderer.fgContext.canvas.width * 0.16);
   }
 
   initAds() {
@@ -744,11 +777,7 @@ export class BallVsWildPage {
 
     this.renderer = new RenderingEngine(foreground, background);
 
-    this.projectileShape = new Circle(this.canvasContext);
-
-    this.canvasContext.canvas.width = window.innerWidth;
-    this.canvasContext.canvas.height = window.innerHeight;
-    this.canvasContext.canvas.style.backgroundColor = "#000";
+    this.projectileShape = new Circle(this.renderer.bgContext);
 
     let powerupWidth = 0.8 * window.innerWidth;
     let powerupHeight = 15;
@@ -757,38 +786,47 @@ export class BallVsWildPage {
     let powerups = [
       new RadialShotBar(this, powerupWidth, powerupHeight, 150, margin, yPosition),
       new ShieldBar(this, powerupWidth, powerupHeight, 150, margin, yPosition),
-      new SlowMotionBar(this, powerupWidth, powerupHeight, 150, this.onSlowMotionEnabled, this.onSlowMotionDisabled, this.canvasContext,
+      new SlowMotionBar(this, powerupWidth, powerupHeight, 150, this.onSlowMotionEnabled, this.onSlowMotionDisabled,
         SlowMotionBar.DEFAULT_DURATION_MILLIS, margin, yPosition)
     ];
-    let view = this.canvasContext.canvas;
+    let view = this.renderer.fgContext.canvas;
     let dimensions = [
       new SpriteDimensions(150, 300, 150, 150, view.width - this.buttonSize() - 10, (3 * 10) + 60 + (2 * this.buttonSize()), this.buttonSize(), this.buttonSize()),
       new SpriteDimensions(0, 300, 150, 150, view.width - this.buttonSize() - 10, (2 * 10) + 60 + this.buttonSize(), this.buttonSize(), this.buttonSize()),
       new SpriteDimensions(0, 450, 150, 150, view.width - this.buttonSize() - 10, 10 + 60, this.buttonSize(), this.buttonSize())
     ];
-    this.powerupSelector = new PowerupSelector(powerups, dimensions, this.spritesImg, this.canvasContext);
+    this.powerupSelector = new PowerupSelector(powerups, dimensions, this.spritesImg, this.renderer.fgContext);
     this.powerupSelector.selectedIndex = 0;
+    this.renderer.addForegroundObject(this.powerupSelector);
 
-    let size = this.canvasContext.canvas.width * 0.13;
-    let centerX = this.canvasContext.canvas.width / 2;
-    let centerY = this.canvasContext.canvas.height / 2;
+    let size = this.renderer.fgContext.canvas.width * 0.13;
+    let centerX = this.renderer.fgContext.canvas.width / 2;
+    let centerY = this.renderer.fgContext.canvas.height / 2;
     this.heroTopLeftX = centerX - (size / 2);
     this.heroTopLeftY = centerY - (size / 2);
     let heroColor = Color.fromHexValue("#0200FF");
-    let heroShape = new Circle(this.canvasContext);
+    let heroShape = new Circle(this.renderer.fgContext);
     this.hero = new ShapeUnit(heroShape, centerX, centerY, size, heroColor);
+    this.renderer.addForegroundObject(this.hero);
+
+    this.healthBar = new HealthBar(15, 15);
+    this.renderer.addForegroundObject(this.healthBar);
+    this.renderer.addBackgroundObject(this.rickRoller);
 
     let page = BallVsWildPage;
-    this.enemyGenerators.push(new EnemyProducer(10, Math.max(20, this.canvasContext.canvas.width * 0.15), 100, 5000, this.hero,
-      this.spritesImg, page.MEDIUM_BEE["leftDimensions"], page.MEDIUM_BEE["rightDimensions"], this.canvasContext, page.MEDIUM_BEE["name"]));
-    this.enemyGenerators.push(new EnemyProducer(30, Math.max(40, this.canvasContext.canvas.width * 0.22), 70, 7500, this.hero,
-      this.spritesImg, page.LARGE_BEE["leftDimensions"], page.LARGE_BEE["rightDimensions"], this.canvasContext, page.LARGE_BEE["name"]));
-    this.enemyGenerators.push(new EnemyProducer(25, Math.max(10, this.canvasContext.canvas.width * 0.09), 175, 8000, this.hero,
-      this.spritesImg, page.SMALL_BEE["leftDimensions"], page.SMALL_BEE["rightDimensions"], this.canvasContext, page.SMALL_BEE["name"]));
-    this.itemGenerators.push(new ItemProducer(this.spritesImg, page.HEALTH_ITEM["srcDimensions"], 30, 250, 8000, this.canvasContext));
+    this.enemyGenerators.push(new EnemyProducer(10, Math.max(20, this.renderer.bgContext.canvas.width * 0.15), 100, 5000, this.hero,
+      this.spritesImg, page.MEDIUM_BEE["leftDimensions"], page.MEDIUM_BEE["rightDimensions"], this.renderer.bgContext, page.MEDIUM_BEE["name"]));
+    this.enemyGenerators.push(new EnemyProducer(30, Math.max(40, this.renderer.bgContext.canvas.width * 0.22), 70, 7500, this.hero,
+      this.spritesImg, page.LARGE_BEE["leftDimensions"], page.LARGE_BEE["rightDimensions"], this.renderer.bgContext, page.LARGE_BEE["name"]));
+    this.enemyGenerators.push(new EnemyProducer(25, Math.max(10, this.renderer.bgContext.canvas.width * 0.09), 175, 8000, this.hero,
+      this.spritesImg, page.SMALL_BEE["leftDimensions"], page.SMALL_BEE["rightDimensions"], this.renderer.bgContext, page.SMALL_BEE["name"]));
+    this.itemGenerators.push(new ItemProducer(this.spritesImg, page.HEALTH_ITEM["srcDimensions"], 30, 250, 8000, this.renderer.bgContext));
 
     let pauseButtonLocation = new Dimensions(10, 10 + 60, this.buttonSize(), this.buttonSize());
     this.pauseButton = new PauseButton(this.spritesImg, page.PAUSE_IMG_DIMENSIONS, page.PLAY_IMG_DIMENSIONS, pauseButtonLocation);
+    this.renderer.addForegroundObject(this.pauseButton);
+
+    this.renderer.redrawForeground();
 
     this.millisUntilDoom = BallVsWildPage.WAVELENGTH_MILLIS;
 
