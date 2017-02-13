@@ -60,7 +60,6 @@ export class RickRollManager extends DrawableObject {
 			ctx.fillStyle = "rgba(255, 255, 255, " + opacity + ")";
 
 			let word = this.words[this.numberOfPauses.toString()];
-			// console.log("yep " + opacity + " and (" + (ctx.canvas.width / 2) +", " + (ctx.canvas.height * word["yLoc"]) + ")");
 			ctx.fillText(word["text"], ctx.canvas.width / 2, ctx.canvas.height * word["yLoc"]);
 		}
 	}

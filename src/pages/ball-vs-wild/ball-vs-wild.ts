@@ -108,6 +108,10 @@ export class BallVsWildPage {
   timeMultiplier: number = 1;
   isViewRefreshed: boolean = false;
   millisSinceTap: number = 0;
+  facts: string[] = [];
+  factsTaken: string[] = [];
+  factIndicesTaken: number[] = [];
+  fact: string = null;
 
   static readonly DAILY_LEADERBOARD_NAME: string = "today";
   static readonly ALL_TIME_LEADERBOARD_NAME: string = "allTime";
@@ -128,6 +132,12 @@ export class BallVsWildPage {
     let page = this;
     this.http = http;
     this.rickRoller = new RickRollManager(http);
+
+    this.http.get('https://api.myjson.com/bins/17gl8x').map(res => res.json()).subscribe(
+      (data) => {
+        page.facts = data["facts"];
+      }
+    );
 
     let allTimeName = BallVsWildPage.ALL_TIME_LEADERBOARD_NAME;
     let dailyName = BallVsWildPage.DAILY_LEADERBOARD_NAME;
@@ -167,11 +177,10 @@ export class BallVsWildPage {
               self.renderer.redrawBackground();
             }
             else if (self.isHighScoresDisplayed) {
+              self.renderer.resume();
+              self.renderer.redraw();
+              self.renderer.suspend();
               if (self.userName || !self.isHighScore){
-                self.renderer.resume();
-                self.renderer.redraw();
-                self.renderer.suspend();
-
                 let centerX = ctx.canvas.width / 2;
                 let allTimeScores = self.highScores[BallVsWildPage.ALL_TIME_LEADERBOARD_NAME];
                 let dailyScores = self.highScores[BallVsWildPage.DAILY_LEADERBOARD_NAME];
@@ -181,19 +190,23 @@ export class BallVsWildPage {
                   centerX, ctx.canvas.height * 0.45, true);
               }
               else {
-                self.renderer.resume();
-                self.renderer.redraw();
-                self.renderer.suspend();
                 document.getElementById("usernameField").style.display = "block";
               }
             }
             else{
+              self.renderer.resume();
+              self.renderer.redraw();
+              self.renderer.suspend();
+
               let centerX = ctx.canvas.width / 2;
-              let centerY = ctx.canvas.height / 2;
+              let centerY = ctx.canvas.height * 0.4;
 
               if (ctx.font != "30px Courier" || ctx.textAlign != "center") {
                 ctx.font = "30px Courier";
                 ctx.textAlign = "center";
+              }
+              if (ctx.fillStyle != "white"){
+                ctx.fillStyle = "white";
               }
               ctx.fillText("You have died.", centerX, centerY - 20);
               ctx.fillText("SCORE: " + self.score, centerX, centerY + 15);
@@ -202,6 +215,21 @@ export class BallVsWildPage {
                 ctx.font = "18px Courier";
                 ctx.fillText("(Tap to continue)", centerX, centerY + 50);
               }
+
+              if (!self.fact) {
+                if (self.facts.length === 0) {
+                  self.facts = self.factsTaken;
+                }
+
+                let randomIndex = Math.floor(Math.random() * self.facts.length);
+                let f = self.facts.splice(randomIndex, 1)[0];
+                self.factsTaken.push(f);
+                self.fact = f;
+              }
+
+              let maxWidth = self.renderer.fgContext.canvas.width * 0.9;
+              let height = self.renderer.fgContext.canvas.height * 0.7;
+              GraphicArtist.wrapText(ctx, "DID YOU KNOW: " + self.fact, centerX, height, maxWidth, 18);
             }
 
             self.millisUntilNextAd -= dtMilliseconds;
@@ -584,6 +612,7 @@ export class BallVsWildPage {
       this.enemies = [];
       this.score = 0;
       this.isHighScoresDisplayed = false;
+      this.fact = null;
 
       this.renderer.resume();
       this.renderer.redraw();
@@ -668,7 +697,7 @@ export class BallVsWildPage {
         publisherId:          admobid.banner,
         interstitialAdId:     admobid.interstitial,
         autoShowInterstitial: false,
-        isTesting: true
+        isTesting: false
       });
 
       this.registerAdEvents();

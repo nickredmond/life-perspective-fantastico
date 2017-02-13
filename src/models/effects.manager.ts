@@ -16,7 +16,6 @@ export class EffectsManager extends DrawableObject {
 	}
 
 	startTouchEffect(x: number, y: number) {
-		console.log('starting at (' + x + ', ' + y + ')');
 		this.touchEffects.push({
 			"millisLeft": this.touchEffectConfig["durationMillis"],
 			"iterations": this.touchEffectConfig["iterations"],
@@ -35,7 +34,6 @@ export class EffectsManager extends DrawableObject {
 	}
 
 	draw(ctx: CanvasRenderingContext2D = null) {
-		console.log('drawing')
 		let self = this;
 		this.touchEffects.forEach(function(effect){
 			let millisPerDuration = self.touchEffectConfig["durationMillis"] / effect["iterations"];
@@ -45,7 +43,6 @@ export class EffectsManager extends DrawableObject {
 			let radius = (1 - (durationLeft / totalDuration)) * EffectsManager.TOUCH_RADIUS;
 			let opacity = (durationLeft / totalDuration);
 
-			console.log("--->>> " + opacity + " - " + radius + " " + iterationsLeft + " " + durationLeft);
 			self.ctx.fillStyle = "rgba(255, 255, 255, " + opacity + ")";
 			self.ctx.beginPath();
 	    	self.ctx.arc(effect["x"], effect["y"], radius, 0, 2 * Math.PI);
