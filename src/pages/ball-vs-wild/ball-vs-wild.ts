@@ -688,7 +688,7 @@ export class BallVsWildPage {
         publisherId:          admobid.banner,
         interstitialAdId:     admobid.interstitial,
         autoShowInterstitial: false,
-        isTesting: true
+        isTesting: false
       });
 
       this.registerAdEvents();
@@ -757,28 +757,7 @@ export class BallVsWildPage {
   }
 
   ionViewDidEnter() {
-    // OBJECTS DRAWN:
-    // pause/play button
-    // healthBar
-    // powerupSelector
-    // score & highScore
-    // --- ---
-    // REDRAW ON:
-    // give/take health
-    // select/use/build powerup
-    // [REMOVED]: isSlowMowing <<< I believe the setInterval/HTMLElement combo takes care of this
-    // toggle pause
-    // score change
     let foreground = <HTMLCanvasElement>document.getElementById("foreground");
-
-    // OBJECTS DRAWN:
-    // BlueBall (hero)
-    // enemies
-    // projectiles
-    // rickRoller
-    // items
-    // REDRAW ON:
-    // every frame
     let background = <HTMLCanvasElement>document.getElementById("background");
 
     this.renderer = new RenderingEngine(foreground, background);
