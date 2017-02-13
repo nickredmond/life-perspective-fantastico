@@ -10,7 +10,7 @@ import { PauseButton } from "../../models/buttons";
 import { Dimensions, SpriteDimensions } from "../../models/dimensions";
 import { GraphicArtist } from "../../models/graphic.artist";
 import { RickRollManager } from "../../models/rickroll.manager";
-
+import { RenderingEngine } from "../../models/engine.rendering";
 import { InAppBrowser } from "ionic-native";
 
 declare var admob;
@@ -77,7 +77,8 @@ export class BallVsWildPage {
   itemGenerators: ItemProducer[] = [];
 
   spritesImg: HTMLImageElement;
-  canvasContext: CanvasRenderingContext2D = null;
+  //canvasContext: CanvasRenderingContext2D = null;
+  renderer: RenderingEngine = null;
   projectileShape: Shape = null;
   storage: Storage;
   isAdsLoaded: boolean = false;
@@ -717,9 +718,32 @@ export class BallVsWildPage {
   }
 
   ionViewDidEnter() {
+    // OBJECTS DRAWN:
+    // pause/play button
+    // healthBar
+    // powerupSelector
+    // score & highScore
+    // --- ---
+    // REDRAW ON:
+    // give/take health
+    // select/use/build powerup
+    // [REMOVED]: isSlowMowing <<< I believe the setInterval/HTMLElement combo takes care of this
+    // toggle pause
+    // score change
+    let foreground = <HTMLCanvasElement>document.getElementById("foreground");
 
-    let canvas = <HTMLCanvasElement>document.getElementById("mainCanvas");
-    this.canvasContext = canvas.getContext("2d");
+    // OBJECTS DRAWN:
+    // BlueBall (hero)
+    // enemies
+    // projectiles
+    // rickRoller
+    // items
+    // REDRAW ON:
+    // every frame
+    let background = <HTMLCanvasElement>document.getElementById("background");
+
+    this.renderer = new RenderingEngine(foreground, background);
+
     this.projectileShape = new Circle(this.canvasContext);
 
     this.canvasContext.canvas.width = window.innerWidth;
