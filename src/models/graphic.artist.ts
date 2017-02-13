@@ -12,6 +12,9 @@ export class GraphicArtist {
           ctx.font = "28px Courier";
           ctx.textAlign = "center";
         }
+        if (ctx.fillStyle != "white") {
+          ctx.fillStyle = "white";
+        }
         ctx.fillText(scoresList["identifier"] + " HIGH SCORES", centerX, topY - 20);
         ctx.fillRect(ctx.canvas.width * 0.1, topY, ctx.canvas.width * 0.8, 3);
 

@@ -1,6 +1,13 @@
 <ion-content style="background-color: black;">
-  <canvas anyPress id="mainCanvas"
+  <canvas anyPress id="foreground" style="z-index: 20"
   	(touchend)="onTouchEnd($event)"
+    (panEvent)="onDragGesture($event)"
+    (tapEvent)="onSingleTap($event)"
+    (doubleTapEvent)="onDoubleTap($event)"
+    (tripleTapEvent)="onTripleTap($event)">
+  </canvas>
+  <canvas anyPress id="background" style="z-index: 10"
+    (touchend)="onTouchEnd($event)"
     (panEvent)="onDragGesture($event)"
     (tapEvent)="onSingleTap($event)"
     (doubleTapEvent)="onDoubleTap($event)"

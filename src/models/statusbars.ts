@@ -2,8 +2,9 @@ import { ExtendedMath } from "./extendedmath";
 import { ShapeUnit } from "./unit";
 import { BallVsWildPage } from "../pages/ball-vs-wild/ball-vs-wild";
 import { SpriteDimensions } from "./dimensions";
+import { DrawableObject } from "./interfaces";
 
-export class HealthBar {
+export class HealthBar extends DrawableObject {
 	static readonly DEFAULT_HP_SIZE: number = 25;
 	static readonly DEFAULT_MAX_HP: number = 3;
 	static readonly HP_PADDING: number = 5;
@@ -28,6 +29,7 @@ export class HealthBar {
 	constructor(positionX: number, positionY: number,
 			maxHP: number = HealthBar.DEFAULT_MAX_HP,
 			hpSize: number = HealthBar.DEFAULT_HP_SIZE){
+		super();
 		this.positionX = positionX;
 		this.positionY = positionY;
 		this.healthPointSize = hpSize;
@@ -60,7 +62,7 @@ export class HealthBar {
 		}
 	}
 
-	draw(ctx: CanvasRenderingContext2D){
+	draw(ctx: CanvasRenderingContext2D = null){
 		let imgX = this.positionX;
 		for (var i = 0; i < this.healthPoints; i++){
 			ctx.drawImage(this.hpImage, imgX, this.positionY, this.healthPointSize, this.healthPointSize);
@@ -73,7 +75,7 @@ export class HealthBar {
 	}
 }
 
-export class PowerupBar {
+export class PowerupBar extends DrawableObject {
 	static readonly DEFAULT_BLINK_RATE: number = 350;
 
 	height: number;
@@ -93,6 +95,7 @@ export class PowerupBar {
 			x: number = 0, y: number = 0, page: BallVsWildPage,
 			barFilledPhrase: string = "DOUBLE-TAP",
 			blinkRateMillis = PowerupBar.DEFAULT_BLINK_RATE) {
+		super();
 		this.height = height;
 		this.width = width;
 		this.maxPoints = maxPoints;
@@ -133,11 +136,12 @@ export class PowerupBar {
 					(this.millisSinceBlink >= (0.5 * this.blinkRateMillis) && this.isTextShowing === false)) {
 				this.isTextShowing = !this.isTextShowing;
 				this.millisSinceBlink = 0;
+				this.page.renderer.redrawForeground();
 			}
 		}
 	}
 
-	draw(ctx: CanvasRenderingContext2D) {
+	draw(ctx: CanvasRenderingContext2D = null) {
 		if (this.currentPoints > 0) {
 			let percentFilled = this.currentPoints / this.maxPoints;
 			let fillWidth = Math.floor(percentFilled * this.width);
@@ -166,7 +170,7 @@ export class PowerupBar {
 	}
 }
 
-export class PowerupSelector {
+export class PowerupSelector extends DrawableObject {
 	selectedIndex: number = 999999;
 	powerupBars: PowerupBar[] = [];
 	dimensions: SpriteDimensions[];
@@ -174,6 +178,7 @@ export class PowerupSelector {
 	canvasContext: CanvasRenderingContext2D = null;
 
 	constructor(powerupBars: PowerupBar[], dimensions: SpriteDimensions[], spritesImg: HTMLImageElement, ctx: CanvasRenderingContext2D) {
+		super();
 		this.powerupBars = powerupBars;
 		this.dimensions = dimensions;
 		this.canvasContext = ctx;
@@ -190,7 +195,7 @@ export class PowerupSelector {
 			powerupBar.update(dtMilliseconds);
 		});
 	}
-	draw() {
+	draw(ctx: CanvasRenderingContext2D = null) {
 		this.powerupBars[this.selectedIndex].draw(this.canvasContext);
 		let self = this;
 		this.dimensions.forEach(function(dimension, index){
@@ -257,7 +262,7 @@ export class RadialShotBar extends PowerupBar {
 	private executeRadialShot() {
 		let startingDegrees = Math.random() * 360;
 		let startingRadians = ExtendedMath.toRadians(startingDegrees);
-		let size = Math.max(10, this.page.canvasContext.canvas.width * 0.04);
+		let size = Math.max(10, this.page.renderer.bgContext.canvas.width * 0.04);
 
 		for (var i = 0; i < 8; i++) {
 			let radians = startingRadians + (BallVsWildPage.RADIANS_PER_PROJECTILE * i);
@@ -269,6 +274,7 @@ export class RadialShotBar extends PowerupBar {
 			nextProjectile.velocityY = yVelocityRatio * BallVsWildPage.MIN_SHOT_VELOCITY;
 
 			this.page.projectiles.push(nextProjectile);
+			this.page.renderer.addBackgroundObject(nextProjectile);
 		}
 	}
 }
@@ -280,12 +286,10 @@ export class SlowMotionBar extends PowerupBar {
 	onSlowMotionDisabled: Function;
 	durationMillis: number = 0;
 	isSlowMotionBar: boolean = true;
-	ctx: CanvasRenderingContext2D;
 	page: BallVsWildPage;
 
 	constructor(page: BallVsWildPage, width: number, height: number, maxPoints: number,
 			onSlowMotionEnabled: Function, onSlowMotionDisabled: Function,
-			ctx: CanvasRenderingContext2D,
 			durationMillis: number = SlowMotionBar.DEFAULT_DURATION_MILLIS,
 			x: number = 0, y: number = 0, barFilledPhrase: string = "DOUBLE-TAP",
 			blinkRateMillis = PowerupBar.DEFAULT_BLINK_RATE) {
@@ -293,7 +297,6 @@ export class SlowMotionBar extends PowerupBar {
 		this.onSlowMotionEnabled = onSlowMotionEnabled;
 		this.onSlowMotionDisabled = onSlowMotionDisabled;
 		this.durationMillis = durationMillis;
-		this.ctx = ctx;
 		this.page = page;
 	}
 

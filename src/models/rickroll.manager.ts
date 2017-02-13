@@ -1,4 +1,6 @@
-export class RickRollManager {
+import { DrawableObject } from "./interfaces";
+
+export class RickRollManager extends DrawableObject {
 	static readonly DEFAULT_LINK_ID: string = "rickRollLink";
 	static readonly MAX_MILLIS_BETWEEN_PAUSES: number = 1000;
 	static readonly DEFAULT_TRIGGER_AMT = 10;
@@ -32,6 +34,7 @@ export class RickRollManager {
 	constructor(linkID: string = RickRollManager.DEFAULT_LINK_ID,
 			triggerAmount: number = RickRollManager.DEFAULT_TRIGGER_AMT,
 			hintAmount: number = RickRollManager.DEFAULT_HINT_AMT){
+		super();
 		this.linkID = linkID;
 		this.triggerAmount = triggerAmount;
 		this.hintAmount = hintAmount;
@@ -40,7 +43,7 @@ export class RickRollManager {
 	update(dtMilliseconds: number) {
 		this.millisSincePause += dtMilliseconds;
 	}
-	draw(ctx: CanvasRenderingContext2D) {
+	draw(ctx: CanvasRenderingContext2D = null) {
 		if (this.numberOfPauses >= this.hintAmount) {
 			if (ctx.textAlign != "center"){
 				ctx.textAlign = "center";
