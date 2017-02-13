@@ -11,6 +11,7 @@ import { Dimensions, SpriteDimensions } from "../../models/dimensions";
 import { GraphicArtist } from "../../models/graphic.artist";
 import { RickRollManager } from "../../models/rickroll.manager";
 import { RenderingEngine } from "../../models/engine.rendering";
+import {EffectsManager } from "../../models/effects.manager";
 
 declare var admob;
 
@@ -74,6 +75,7 @@ export class BallVsWildPage {
   enemies: Enemy[] = [];
   enemyGenerators: EnemyProducer[] = [];
   itemGenerators: ItemProducer[] = [];
+  effectsMgr: EffectsManager = null;
 
   spritesImg: HTMLImageElement;
   //canvasContext: CanvasRenderingContext2D = null;
@@ -158,6 +160,9 @@ export class BallVsWildPage {
 
             if (self.healthBar.healthPoints > 0){
               self.gameTick(dtMilliseconds);
+              if (!self.renderer.isInBackground(self.effectsMgr)){
+                self.renderer.addBackgroundObject(self.effectsMgr);
+              }
               self.renderer.redrawBackground();
             }
             else if (self.isHighScoresDisplayed) {
@@ -239,6 +244,7 @@ export class BallVsWildPage {
   gameTick(dtMillis: number){
     let dtMillisFinal = this.timeMultiplier * dtMillis;
     this.rickRoller.update(dtMillisFinal);
+    this.effectsMgr.update(dtMillisFinal);
 
     if (!this.pauseButton.isPaused()) {
       this.updateFrame(dtMillisFinal);
@@ -674,6 +680,7 @@ export class BallVsWildPage {
       nextProjectile.velocityY = distanceY; // (velocityScale > 1) ? (distanceY * velocityScale) : this.maxVelocityY;
       this.projectiles.push(nextProjectile);
       this.renderer.addBackgroundObject(nextProjectile);
+      this.effectsMgr.startTouchEffect(centerX, centerY);
 
       this.maxVelocity = 0;
       this.millisSinceLastShot = 0;
@@ -829,6 +836,8 @@ export class BallVsWildPage {
     this.renderer.redrawForeground();
 
     this.millisUntilDoom = BallVsWildPage.WAVELENGTH_MILLIS;
+    this.effectsMgr = new EffectsManager(this.renderer.bgContext);
+    this.renderer.addBackgroundObject(this.effectsMgr);
 
     this.initAds();
     admob.requestInterstitialAd();
