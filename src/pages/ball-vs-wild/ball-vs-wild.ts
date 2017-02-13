@@ -629,20 +629,6 @@ export class BallVsWildPage {
     } else if (this.healthBar.healthPoints === 0 && this.millisUntilNextAd <= BallVsWildPage.MILLIS_BETWEEN_ADS - 2200) {
       this.isHighScoresDisplayed = true;
     }
-    else if (this.maxVelocity > 0 && this.millisSinceLastShot >= 200) {
-      let velocityScale = BallVsWildPage.MIN_SHOT_VELOCITY / Math.abs(this.maxVelocity);
-
-      let size = Math.max(10, this.renderer.bgContext.canvas.width * 0.04);
-      let nextProjectile = new ShapeUnit(this.projectileShape, this.hero.positionX, this.hero.positionY,
-        size, BallVsWildPage.PROJECTILE_COLOR);
-      nextProjectile.velocityX = (velocityScale > 1) ? (this.maxVelocityX * velocityScale) : this.maxVelocityX;
-      nextProjectile.velocityY = (velocityScale > 1) ? (this.maxVelocityY * velocityScale) : this.maxVelocityY;
-      this.projectiles.push(nextProjectile);
-      this.renderer.addBackgroundObject(nextProjectile);
-
-      this.maxVelocity = 0;
-      this.millisSinceLastShot = 0;
-    }
   }
   onDoubleTap(event) {
     let selectedPowerup = this.powerupSelector.powerupBars[this.powerupSelector.selectedIndex];
@@ -655,9 +641,12 @@ export class BallVsWildPage {
     let centerX = event.center.x;
     let centerY = event.center.y;
     let self = this;
+    let isButtonPressed = false;
+
     this.powerupSelector.dimensions.forEach(function(dimension, index){
       if (dimension.dx < centerX && centerX < dimension.dx + dimension.dWidth &&
           dimension.dy < centerY && centerY < dimension.dy + dimension.dHeight) {
+        isButtonPressed = true;
         self.powerupSelector.selectedIndex = index;
         self.renderer.redrawForeground();
       }
@@ -665,11 +654,29 @@ export class BallVsWildPage {
     let btn = this.pauseButton.location;
     if (btn.x < centerX && centerX < btn.x + btn.width &&
         btn.y < centerY && centerY < btn.y + btn.height) {
+      isButtonPressed = true;
       this.pauseButton.togglePause();
       this.renderer.redrawForeground();
       if (this.pauseButton.isPaused()) {
         this.rickRoller.onPaused();
       }
+    }
+    if (!isButtonPressed && this.millisSinceLastShot >= 200) {
+      let distance = ExtendedMath.distance(this.hero.positionX, this.hero.positionY, centerX, centerY);
+      let velocityScale = BallVsWildPage.MIN_SHOT_VELOCITY / distance;
+      let distanceX = velocityScale * (centerX - this.hero.positionX);
+      let distanceY = velocityScale * (centerY - this.hero.positionY);
+
+      let size = Math.max(10, this.renderer.bgContext.canvas.width * 0.04);
+      let nextProjectile = new ShapeUnit(this.projectileShape, this.hero.positionX, this.hero.positionY,
+        size, BallVsWildPage.PROJECTILE_COLOR);
+      nextProjectile.velocityX = distanceX; // (velocityScale > 1) ? (distanceX * velocityScale) : this.maxVelocityX;
+      nextProjectile.velocityY = distanceY; // (velocityScale > 1) ? (distanceY * velocityScale) : this.maxVelocityY;
+      this.projectiles.push(nextProjectile);
+      this.renderer.addBackgroundObject(nextProjectile);
+
+      this.maxVelocity = 0;
+      this.millisSinceLastShot = 0;
     }
   }
 

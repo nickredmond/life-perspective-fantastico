@@ -1,6 +1,7 @@
 import { Color } from "./color";
 import { Shape } from "./shapes";
 import { Dimensions } from "./dimensions";
+import { ExtendedMath } from "./extendedmath";
 
 export abstract class Unit {
 	isAlive: boolean = true;
@@ -20,10 +21,8 @@ export abstract class Unit {
 	}
 
 	public intersects(otherUnit: Unit): boolean {
-		let x_diff_squared = Math.pow(otherUnit.positionX - this.positionX, 2);
-		let y_diff_squared = Math.pow(otherUnit.positionY - this.positionY, 2);
-		let distance = Math.sqrt(x_diff_squared + y_diff_squared);
-		return distance < (otherUnit.radius() + this.radius());
+		return (ExtendedMath.distance(this.positionX, this.positionY, otherUnit.positionX, otherUnit.positionY)
+			< (otherUnit.radius() + this.radius()));
 	}
 
 	radius(): number {
