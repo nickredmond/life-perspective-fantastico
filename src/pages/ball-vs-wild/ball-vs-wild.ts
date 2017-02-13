@@ -107,6 +107,7 @@ export class BallVsWildPage {
   rickRoller: RickRollManager = null;
   timeMultiplier: number = 1;
   isViewRefreshed: boolean = false;
+  millisSinceTap: number = 0;
 
   static readonly DAILY_LEADERBOARD_NAME: string = "today";
   static readonly ALL_TIME_LEADERBOARD_NAME: string = "allTime";
@@ -243,6 +244,7 @@ export class BallVsWildPage {
 
   gameTick(dtMillis: number){
     let dtMillisFinal = this.timeMultiplier * dtMillis;
+    this.millisSinceTap += dtMillisFinal;
     this.rickRoller.update(dtMillisFinal);
     this.effectsMgr.update(dtMillisFinal);
 
@@ -408,58 +410,11 @@ export class BallVsWildPage {
             this.explodeLargeBee(this.enemies[j]);
           }
           this.strikeEnemy(this.enemies[j], this.projectiles[k]);
-        } else {
-          let offsetX = this.enemies[j].positionX;
-          let offsetY = this.enemies[j].positionY;
-          let x2 = this.projectiles[k].positionX + offsetX;
-          let y2 = this.projectiles[k].positionY + offsetY;
-
-          this.projectiles[k].reverseFrame(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-          let x1 = this.projectiles[k].positionX + offsetX;
-          let y1 = this.projectiles[k].positionY + offsetY;
-
-          let dx_squared = Math.pow(x2 - x1, 2);
-          let dy_squared = Math.pow(y2 - y1, 2);
-          let dr = Math.sqrt(dx_squared + dy_squared);
-          let D = (x1 * y2) - (x2 * y1);
-          let discriminant = (Math.pow(this.enemies[j].size, 2) * Math.pow(dr, 2)) - Math.pow(D, 2);
-          let isIntersection = (discriminant >= 0);
-
-          if (isIntersection) {
-            if (this.enemies[j].name === BallVsWildPage.LARGE_BEE["name"]){
-              this.explodeLargeBee(this.enemies[j]);
-            }
-            this.strikeEnemy(this.enemies[j], this.projectiles[k]);
-          } else {
-            this.projectiles[k].update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-          }
         }
       }
       for (var j = 0; j < this.items.length; j++){
         if (this.items[j].intersects(this.projectiles[k])){
           this.strikeItem(this.items[j], this.projectiles[k]);
-        } else {
-          let offsetX = this.items[j].positionX;
-          let offsetY = this.items[j].positionY;
-          let x2 = this.projectiles[k].positionX + offsetX;
-          let y2 = this.projectiles[k].positionY + offsetY;
-
-          this.projectiles[k].reverseFrame(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-          let x1 = this.projectiles[k].positionX + offsetX;
-          let y1 = this.projectiles[k].positionY + offsetY;
-
-          let dx_squared = Math.pow(x2 - x1, 2);
-          let dy_squared = Math.pow(y2 - y1, 2);
-          let dr = Math.sqrt(dx_squared + dy_squared);
-          let D = (x1 * y2) - (x2 * y1);
-          let discriminant = (Math.pow(this.items[j].size, 2) * Math.pow(dr, 2)) - Math.pow(D, 2);
-          let isIntersection = (discriminant >= 0);
-
-          if (isIntersection) {
-            this.strikeItem(this.items[j], this.projectiles[k]);
-          } else {
-            this.projectiles[k].update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
-          }
         }
       }
     }
@@ -644,46 +599,49 @@ export class BallVsWildPage {
     }
   }
   onSingleTap(event) {
-    let centerX = event.center.x;
-    let centerY = event.center.y;
-    let self = this;
-    let isButtonPressed = false;
+    if (this.millisSinceTap >= 200) {
+      this.millisSinceTap = 0;
+      let centerX = event.center.x;
+      let centerY = event.center.y;
+      let self = this;
+      let isButtonPressed = false;
 
-    this.powerupSelector.dimensions.forEach(function(dimension, index){
-      if (dimension.dx < centerX && centerX < dimension.dx + dimension.dWidth &&
-          dimension.dy < centerY && centerY < dimension.dy + dimension.dHeight) {
+      this.powerupSelector.dimensions.forEach(function(dimension, index){
+        if (dimension.dx < centerX && centerX < dimension.dx + dimension.dWidth &&
+            dimension.dy < centerY && centerY < dimension.dy + dimension.dHeight) {
+          isButtonPressed = true;
+          self.powerupSelector.selectedIndex = index;
+          self.renderer.redrawForeground();
+        }
+      });
+      let btn = this.pauseButton.location;
+      if (btn.x < centerX && centerX < btn.x + btn.width &&
+          btn.y < centerY && centerY < btn.y + btn.height) {
         isButtonPressed = true;
-        self.powerupSelector.selectedIndex = index;
-        self.renderer.redrawForeground();
+        this.pauseButton.togglePause();
+        this.renderer.redrawForeground();
+        if (this.pauseButton.isPaused()) {
+          this.rickRoller.onPaused();
+        }
       }
-    });
-    let btn = this.pauseButton.location;
-    if (btn.x < centerX && centerX < btn.x + btn.width &&
-        btn.y < centerY && centerY < btn.y + btn.height) {
-      isButtonPressed = true;
-      this.pauseButton.togglePause();
-      this.renderer.redrawForeground();
-      if (this.pauseButton.isPaused()) {
-        this.rickRoller.onPaused();
+      if (!isButtonPressed && this.millisSinceLastShot >= 200) {
+        let distance = ExtendedMath.distance(this.hero.positionX, this.hero.positionY, centerX, centerY);
+        let velocityScale = BallVsWildPage.MIN_SHOT_VELOCITY / distance;
+        let distanceX = velocityScale * (centerX - this.hero.positionX);
+        let distanceY = velocityScale * (centerY - this.hero.positionY);
+
+        let size = Math.max(10, this.renderer.bgContext.canvas.width * 0.04);
+        let nextProjectile = new ShapeUnit(this.projectileShape, this.hero.positionX, this.hero.positionY,
+          size, BallVsWildPage.PROJECTILE_COLOR);
+        nextProjectile.velocityX = distanceX; // (velocityScale > 1) ? (distanceX * velocityScale) : this.maxVelocityX;
+        nextProjectile.velocityY = distanceY; // (velocityScale > 1) ? (distanceY * velocityScale) : this.maxVelocityY;
+        this.projectiles.push(nextProjectile);
+        this.renderer.addBackgroundObject(nextProjectile);
+        this.effectsMgr.startTouchEffect(centerX, centerY);
+
+        this.maxVelocity = 0;
+        this.millisSinceLastShot = 0;
       }
-    }
-    if (!isButtonPressed && this.millisSinceLastShot >= 200) {
-      let distance = ExtendedMath.distance(this.hero.positionX, this.hero.positionY, centerX, centerY);
-      let velocityScale = BallVsWildPage.MIN_SHOT_VELOCITY / distance;
-      let distanceX = velocityScale * (centerX - this.hero.positionX);
-      let distanceY = velocityScale * (centerY - this.hero.positionY);
-
-      let size = Math.max(10, this.renderer.bgContext.canvas.width * 0.04);
-      let nextProjectile = new ShapeUnit(this.projectileShape, this.hero.positionX, this.hero.positionY,
-        size, BallVsWildPage.PROJECTILE_COLOR);
-      nextProjectile.velocityX = distanceX; // (velocityScale > 1) ? (distanceX * velocityScale) : this.maxVelocityX;
-      nextProjectile.velocityY = distanceY; // (velocityScale > 1) ? (distanceY * velocityScale) : this.maxVelocityY;
-      this.projectiles.push(nextProjectile);
-      this.renderer.addBackgroundObject(nextProjectile);
-      this.effectsMgr.startTouchEffect(centerX, centerY);
-
-      this.maxVelocity = 0;
-      this.millisSinceLastShot = 0;
     }
   }
 
