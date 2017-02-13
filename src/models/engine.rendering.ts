@@ -78,6 +78,19 @@ export class RenderingEngine {
 		this.bgObjects.splice(0, this.bgObjects.length);
 	}
 
+	private includes(array: DrawableObject[], obj: DrawableObject): boolean {
+		let isIncluded = false;
+
+		for (var i = 0; i < array.length && !isIncluded; i++){
+			isIncluded = (array[i] === obj);
+		}
+
+		return isIncluded;
+	}
+	isInBackground(obj: DrawableObject): boolean {
+		return this.includes(this.bgObjects, obj);
+	}
+
 	// COLLECTIVE METHODS
 
 	redraw(){

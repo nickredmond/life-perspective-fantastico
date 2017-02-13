@@ -11,7 +11,6 @@ import { Dimensions, SpriteDimensions } from "../../models/dimensions";
 import { GraphicArtist } from "../../models/graphic.artist";
 import { RickRollManager } from "../../models/rickroll.manager";
 import { RenderingEngine } from "../../models/engine.rendering";
-import { InAppBrowser } from "ionic-native";
 
 declare var admob;
 
@@ -327,6 +326,9 @@ export class BallVsWildPage {
       }
       else {
         projectile.update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
+        if (!this.renderer.isInBackground(projectile)){
+          this.renderer.addBackgroundObject(projectile);
+        }
       }
     }
     this.items = this.items.filter(function(item){
@@ -341,6 +343,9 @@ export class BallVsWildPage {
       }
       else {
         item.update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
+        if (!this.renderer.isInBackground(item)){
+          this.renderer.addBackgroundObject(item);
+        }
       }
     }
     this.enemies = this.enemies.filter(function(enemy){
@@ -383,6 +388,9 @@ export class BallVsWildPage {
       }
       else {
         enemy.update(dtMilliseconds / BallVsWildPage.MILLIS_PER_SECOND);
+        if (!this.renderer.isInBackground(enemy)){
+          this.renderer.addBackgroundObject(enemy);
+        }
       }
     }
 

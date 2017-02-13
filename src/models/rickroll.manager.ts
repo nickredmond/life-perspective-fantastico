@@ -56,8 +56,8 @@ export class RickRollManager extends DrawableObject {
 								RickRollManager.FADE_MILLIS;
 			ctx.fillStyle = "rgba(255, 255, 255, " + opacity + ")";
 
-			let timesLeft = this.triggerAmount - this.numberOfPauses;
 			let word = this.words[this.numberOfPauses.toString()];
+			// console.log("yep " + opacity + " and (" + (ctx.canvas.width / 2) +", " + (ctx.canvas.height * word["yLoc"]) + ")");
 			ctx.fillText(word["text"], ctx.canvas.width / 2, ctx.canvas.height * word["yLoc"]);
 		}
 	}
