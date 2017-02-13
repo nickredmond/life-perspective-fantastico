@@ -9,6 +9,9 @@ export abstract class Unit {
 	velocityX: number = 0;
 	velocityY: number = 0;
 	size: number;
+	isDrawn: boolean = false;
+	needsDraw: Function = null;
+	ctx: CanvasRenderingContext2D;
 
 	constructor(x: number = 0, y: number = 0, size: number = 0){
 		this.positionX = x;
@@ -27,6 +30,11 @@ export abstract class Unit {
 		return this.size / 2;
 	}
 	public update(dt) {
+		if (!this.isDrawn && this.ctx){
+			this.needsDraw(this.ctx);
+		} else {
+			this.isDrawn = false;
+		}
 		this.positionX += (this.velocityX * dt);
 		this.positionY += (this.velocityY * dt);
 	}
@@ -79,14 +87,19 @@ export class Enemy extends ImageUnit {
 		this.value = value;
 		this.leftSrcDimensions = leftDimensions;
 		this.name = name;
+		this.needsDraw = this.draw;
 	}
 
 	radius(): number {
 		return this.size / 1.5;
 	}
 	public draw(ctx: CanvasRenderingContext2D) {
+		if (!this.ctx) {
+			this.ctx = ctx;
+		}
 		let srcRect = (this.velocityX < 0) ? this.leftSrcDimensions : this.srcDimensions;
 		ctx.drawImage(this.sourceImg, srcRect.x, srcRect.y, srcRect.width, srcRect.height,
 			(this.positionX - this.radius()), (this.positionY - this.radius()), this.size, this.size);
+		this.isDrawn = true;
 	}
 }

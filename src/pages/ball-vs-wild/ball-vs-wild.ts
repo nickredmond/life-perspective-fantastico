@@ -158,7 +158,6 @@ export class BallVsWildPage {
 
             if (self.healthBar.healthPoints > 0){
               self.gameTick(dtMilliseconds);
-              console.log("huh")
               self.renderer.redrawBackground();
             }
             else if (self.isHighScoresDisplayed) {
@@ -769,9 +768,9 @@ export class BallVsWildPage {
     let margin = 0.1 * window.innerWidth;
     let yPosition = window.innerHeight - powerupHeight - 15;
     let powerups = [
-      new RadialShotBar(this, powerupWidth, powerupHeight, 150, margin, yPosition),
+      new RadialShotBar(this, powerupWidth, powerupHeight, 200, margin, yPosition),
       new ShieldBar(this, powerupWidth, powerupHeight, 150, margin, yPosition),
-      new SlowMotionBar(this, powerupWidth, powerupHeight, 150, this.onSlowMotionEnabled, this.onSlowMotionDisabled,
+      new SlowMotionBar(this, powerupWidth, powerupHeight, 250, this.onSlowMotionEnabled, this.onSlowMotionDisabled,
         SlowMotionBar.DEFAULT_DURATION_MILLIS, margin, yPosition)
     ];
     let view = this.renderer.fgContext.canvas;
