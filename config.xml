@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<widget id="redmond.ionic.ballvswild" version="2.4.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-  <name>Bombs, Shields, and... Bees?</name>
-  <description>Classic arcade shooter game.</description>
+<widget id="life.perspective.fantastico" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+  <name>The Fantastic Perspective of Life</name>
+  <description>Simulation game where the hero is his own worst enemy...</description>
   <author email="nicholas.john.redmond@gmail.com" href="https://github.com/nickredmond">Nick Redmond</author>
   <content src="index.html"/>
   <access origin="*"/>
