@@ -288,7 +288,7 @@ export class BallVsWildPage {
     let isize = height * 0.25;
     let imgSrc = "img/sprites.png";
     let leftDimensions = new SpriteDimensions(0, 0, 150, 150, width * 0.3, height * 0.75, isize, isize);
-    let rightDimensions = new SpriteDimensions(150, 0, 150, 150, width * 0.5, height * 0.8, isize, isize);
+    let rightDimensions = new SpriteDimensions(150, 0, 150, 150, width * 0.5, height * 0.75, isize, isize);
 
     let img1 = new FadingImage(leftDimensions, imgSrc, durationMillis);
     let img2 = new FadingImage(rightDimensions, imgSrc, durationMillis);
