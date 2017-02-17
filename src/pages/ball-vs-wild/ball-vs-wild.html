@@ -1,4 +1,5 @@
 <ion-content style="background-color: black;">
+  <canvas id="fadeCover" style="z-index: 30; opacity: 0;"></canvas>
   <canvas anyPress id="foreground" style="z-index: 20"
   	(touchend)="onTouchEnd($event)"
     (panEvent)="onDragGesture($event)"

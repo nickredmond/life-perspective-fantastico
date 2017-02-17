@@ -7,11 +7,6 @@ export class GraphicArtist {
     let words = text.split(' ');
     let line = '';
 
-    let font = lineHeight + "px Courier";
-    if (context.font != font) {
-      context.font = font;
-    }
-
     for(var n = 0; n < words.length; n++) {
       let testLine = line + words[n] + ' ';
       let metrics = context.measureText(testLine);

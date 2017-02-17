@@ -2,6 +2,7 @@ import { Color } from "./color";
 import { Shape } from "./shapes";
 import { Dimensions } from "./dimensions";
 import { ExtendedMath } from "./extendedmath";
+import { Perspective } from "./hud.models";
 
 export abstract class Unit {
 	isAlive: boolean = true;
@@ -75,18 +76,16 @@ export class ImageUnit extends Unit {
 	}
 }
 
-export class Enemy extends ImageUnit {
-	value: number;
-	leftSrcDimensions: Dimensions;
-	name: string;
+export class CharacterUnit extends ImageUnit {
+	leftSrcDimensions: Dimensions[] = [];
+	selectedDimension: number;
 
-	constructor(value: number, spritesImage: HTMLImageElement, leftDimensions: Dimensions, rightDimensions: Dimensions,
+	constructor(spritesImage: HTMLImageElement, leftDimensions: Dimensions[], rightDimensions: Dimensions[],
 			x: number = 0, y: number = 0, size: number = 0, name: string = null){
-		super(spritesImage, rightDimensions, x, y, size);
-		this.value = value;
+		super(spritesImage, rightDimensions[0], x, y, size);
 		this.leftSrcDimensions = leftDimensions;
-		this.name = name;
 		this.needsDraw = this.draw;
+		this.selectedDimension = 0;
 	}
 
 	radius(): number {
@@ -96,9 +95,21 @@ export class Enemy extends ImageUnit {
 		if (!this.ctx) {
 			this.ctx = ctx;
 		}
-		let srcRect = (this.velocityX < 0) ? this.leftSrcDimensions : this.srcDimensions;
+		let srcRect = (this.velocityX < 0) ?
+			this.leftSrcDimensions[this.selectedDimension] :
+			this.srcDimensions[this.selectedDimension];
 		ctx.drawImage(this.sourceImg, srcRect.x, srcRect.y, srcRect.width, srcRect.height,
 			(this.positionX - this.radius()), (this.positionY - this.radius()), this.size, this.size);
 		this.isDrawn = true;
+	}
+}
+
+export class HeroUnit extends CharacterUnit {
+	perspective: Perspective = new Perspective();
+
+	constructor(initialPerspective: number, spritesImage: HTMLImageElement, leftDimensions: Dimensions[], rightDimensions: Dimensions[],
+			x: number = 0, y: number = 0, size: number = 0, name: string = null) {
+		super(spritesImage, leftDimensions, rightDimensions, x, y, size, name);
+		this.perspective.setValue(initialPerspective);
 	}
 }

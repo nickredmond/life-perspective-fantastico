@@ -1,4 +1,7 @@
 export class Color {
+	static readonly BLACK: Color = new Color(0, 0, 0);
+	static readonly WHITE: Color = new Color(255, 255, 255);
+
 	r: number;
 	g: number;
 	b: number;
@@ -27,6 +30,10 @@ export class Color {
 	}
 
 	public toStringRGB(): string {
-		return "rgb(" + this.r + ", " + this.g + ", " + this.b + ")";
+		return this.toStringRGBA(255);
+	}
+
+	public toStringRGBA(opacity: number): string {
+		return "rgba(" + this.r + ", " + this.g + ", " + this.b + ", " + opacity + ")";
 	}
 }
